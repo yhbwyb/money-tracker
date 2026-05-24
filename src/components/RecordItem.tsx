@@ -17,37 +17,60 @@ export default function RecordItem({
   onDelete,
 }: Props) {
   return (
-    <div className="flex items-center justify-between bg-white px-4 py-3 border-b border-gray-50 active:bg-gray-50">
+    <div
+      className="card-paper mx-4 mb-2 px-4 py-3 flex items-center justify-between active:opacity-70 transition-opacity"
+    >
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-xs text-gray-400">{formatDate(transaction.date)}</span>
-          <span className="text-sm font-medium text-gray-700">{eventName}</span>
+        {/* Top row */}
+        <div className="flex items-center gap-2 mb-1.5">
+          <span className="text-xs opacity-40 font-serif" style={{ fontFamily: 'var(--font-serif)' }}>
+            {formatDate(transaction.date)}
+          </span>
+
           <span
-            className={`text-xs px-1.5 py-0.5 rounded ${
-              transaction.accountType === 'public'
-                ? 'bg-orange-100 text-orange-700'
-                : 'bg-blue-100 text-blue-700'
-            }`}
+            className={transaction.accountType === 'public' ? 'seal-public' : 'seal-private'}
           >
-            {transaction.accountType === 'public' ? '公账' : '私账'}
+            {transaction.accountType === 'public' ? '公' : '私'}
+          </span>
+
+          <span
+            className="font-medium"
+            style={{ fontSize: '0.875rem', letterSpacing: '0.03em' }}
+          >
+            {eventName}
           </span>
         </div>
-        <div className="text-xs text-gray-400">
-          {bankName} ({bankCardNumber})
+
+        {/* Bottom row */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs opacity-35">
+            {bankName} · {bankCardNumber}
+          </span>
+          {transaction.note && (
+            <span
+              className="text-xs opacity-25 truncate max-w-[120px]"
+              style={{ fontStyle: 'italic' }}
+            >
+              {transaction.note}
+            </span>
+          )}
         </div>
-        {transaction.note && (
-          <div className="text-xs text-gray-400 mt-0.5 truncate">{transaction.note}</div>
-        )}
       </div>
-      <div className="flex items-center gap-2 flex-shrink-0">
-        <span className="text-lg font-semibold text-gray-800">
+
+      {/* Amount + Delete */}
+      <div className="flex items-center gap-3 flex-shrink-0">
+        <span
+          className="font-serif font-bold tracking-tight tabular-nums"
+          style={{ fontSize: '1.05rem', letterSpacing: '-0.02em' }}
+        >
           ¥{formatAmount(transaction.amount)}
         </span>
         <button
           onClick={onDelete}
-          className="text-red-400 text-xs px-2 py-1 hover:bg-red-50 rounded"
+          className="opacity-0 group-hover:opacity-100 transition-opacity"
+          style={{ color: 'var(--color-ink-muted)', fontSize: '0.7rem', padding: '0.25rem' }}
         >
-          删除
+          删
         </button>
       </div>
     </div>

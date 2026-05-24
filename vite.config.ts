@@ -13,8 +13,8 @@ export default defineConfig({
         name: '记账本',
         short_name: '记账本',
         description: '简单记账工具',
-        theme_color: '#1e40af',
-        background_color: '#ffffff',
+        theme_color: '#f5efe0',
+        background_color: '#fdf8f0',
         display: 'standalone',
         orientation: 'portrait',
         icons: [

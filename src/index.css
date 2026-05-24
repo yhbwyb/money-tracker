@@ -1,10 +1,155 @@
 @import "tailwindcss";
 
+@theme {
+  --color-ink: #2c2416;
+  --color-ink-light: #6b5e4a;
+  --color-ink-muted: #9b8e7a;
+  --color-paper: #fdf8f0;
+  --color-paper-dark: #f5efe0;
+  --color-paper-darker: #ebe0c8;
+  --color-vermillion: #c43a31;
+  --color-vermillion-light: #f0d6d4;
+  --color-gold: #b8954a;
+  --color-gold-light: #f5eedb;
+  --color-jade: #5b8c5a;
+  --color-jade-light: #e2efe1;
+  --font-serif: "Noto Serif SC", "SimSun", "STSong", serif;
+  --font-sans: "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+
 body {
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior: none;
+  font-family: var(--font-sans);
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Paper texture overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Vermillion seal-stamp style badge */
+.seal-public {
+  font-family: var(--font-serif);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-vermillion);
+  border: 1.5px solid var(--color-vermillion);
+  border-radius: 0.25rem;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  transform: rotate(-1deg);
+  opacity: 0.85;
+}
+
+.seal-private {
+  font-family: var(--font-serif);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-ink);
+  border: 1.5px solid var(--color-ink-muted);
+  border-radius: 0.25rem;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  transform: rotate(-0.5deg);
+  opacity: 0.7;
+}
+
+/* Ink button */
+.btn-ink {
+  background: var(--color-ink);
+  color: var(--color-paper);
+  transition: all 0.2s ease;
+}
+
+.btn-ink:active {
+  background: #1a150a;
+  transform: scale(0.97);
+}
+
+/* Card with subtle shadow */
+.card-paper {
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(44, 36, 22, 0.06), 0 1px 2px rgba(44, 36, 22, 0.04);
+  border: 1px solid rgba(44, 36, 22, 0.06);
+}
+
+/* FAB with ink style */
+.fab-ink {
+  background: var(--color-vermillion);
+  color: white;
+  box-shadow: 0 4px 14px rgba(196, 58, 49, 0.35);
+  transition: all 0.2s ease;
+}
+
+.fab-ink:active {
+  transform: scale(0.93);
+  box-shadow: 0 2px 8px rgba(196, 58, 49, 0.4);
+}
+
+/* Subtle ink divider */
+.divider-ink {
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--color-paper-darker), transparent);
+}
+
+/* Month picker button */
+.month-btn {
+  transition: all 0.15s ease;
+  color: var(--color-ink-light);
+}
+
+.month-btn:active {
+  color: var(--color-vermillion);
+  transform: scale(0.92);
+}
+
+/* Form input */
+.input-ink {
+  background: var(--color-paper-dark);
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  color: var(--color-ink);
+  transition: all 0.2s ease;
+}
+
+.input-ink:focus {
+  outline: none;
+  border-color: var(--color-ink);
+  background: white;
+  box-shadow: 0 0 0 3px rgba(44, 36, 22, 0.06);
+}
+
+/* Chip selector */
+.chip-selected {
+  background: var(--color-ink) !important;
+  color: var(--color-paper) !important;
+}
+
+/* PWA manifest theme */
+meta[name="theme-color"] {
+  content: var(--color-paper);
 }

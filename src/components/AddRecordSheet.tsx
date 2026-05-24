@@ -20,6 +20,7 @@ export default function AddRecordSheet({ onClose, onSaved }: Props) {
   const [bankCardId, setBankCardId] = useState(cards[0]?.id ?? 0)
   const [amount, setAmount] = useState('')
   const [note, setNote] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   const selectedCard = cards.find(c => c.id === bankCardId)
 
@@ -28,6 +29,7 @@ export default function AddRecordSheet({ onClose, onSaved }: Props) {
     if (!amt || amt <= 0) return
     if (!eventTypeId || !bankCardId) return
 
+    setSubmitting(true)
     await addTransaction({
       date,
       eventTypeId,
@@ -36,119 +38,160 @@ export default function AddRecordSheet({ onClose, onSaved }: Props) {
       amount: amt,
       note,
     })
-    onSaved()
+    setTimeout(() => {
+      setSubmitting(false)
+      onSaved()
+    }, 150)
+  }
+
+  const sectionLabelStyle = {
+    fontSize: '0.7rem',
+    color: 'var(--color-ink-muted)',
+    letterSpacing: '0.12em',
+    marginBottom: '0.375rem',
+    fontFamily: 'var(--font-sans)',
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/40" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end" style={{ backgroundColor: 'rgba(44, 36, 22, 0.4)', backdropFilter: 'blur(2px)' }} onClick={onClose}>
       <div
-        className="w-full max-w-md mx-auto bg-white rounded-t-2xl px-5 py-4 max-h-[85vh] overflow-y-auto"
+        className="w-full max-w-md mx-auto rounded-t-2xl px-6 pt-6 pb-8 max-h-[88vh] overflow-y-auto"
+        style={{
+          backgroundColor: 'var(--color-paper)',
+          boxShadow: '0 -8px 40px rgba(44, 36, 22, 0.12)',
+        }}
         onClick={e => e.stopPropagation()}
       >
-        <div className="text-center text-lg font-semibold mb-4">记一笔</div>
+        {/* Handle bar */}
+        <div className="flex justify-center mb-5">
+          <div
+            className="w-10 h-1 rounded-full"
+            style={{ backgroundColor: 'var(--color-paper-darker)' }}
+          />
+        </div>
+
+        {/* Title */}
+        <h2
+          className="text-center font-serif font-bold mb-6 tracking-widest"
+          style={{ fontSize: '1.25rem', letterSpacing: '0.25em' }}
+        >
+          记一笔
+        </h2>
 
         {/* Date */}
-        <div className="mb-4">
-          <label className="block text-sm text-gray-500 mb-1">日期</label>
+        <div className="mb-5">
+          <label style={sectionLabelStyle}>日期</label>
           <input
             type="date"
             value={date}
             onChange={e => setDate(e.target.value)}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-base"
+            className="input-ink w-full"
+            style={{ fontSize: '0.95rem' }}
           />
         </div>
 
         {/* Event Type */}
-        <div className="mb-4">
-          <label className="block text-sm text-gray-500 mb-1">事件</label>
+        <div className="mb-5">
+          <label style={sectionLabelStyle}>事由</label>
           <div className="flex flex-wrap gap-2">
-            {types.map(t => (
-              <button
-                key={t.id}
-                onClick={() => setEventTypeId(t.id!)}
-                className={`px-4 py-2 rounded-full text-sm ${
-                  eventTypeId === t.id
-                    ? 'bg-blue-700 text-white'
-                    : 'bg-gray-100 text-gray-700'
-                }`}
-              >
-                {t.name}
-              </button>
-            ))}
+            {types.map(t => {
+              const selected = eventTypeId === t.id
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => setEventTypeId(t.id!)}
+                  className="px-4 py-2 rounded-full text-sm transition-all duration-150"
+                  style={{
+                    backgroundColor: selected ? 'var(--color-ink)' : 'white',
+                    color: selected ? 'var(--color-paper)' : 'var(--color-ink-light)',
+                    border: selected ? '1px solid var(--color-ink)' : '1px solid rgba(44,36,22,0.1)',
+                    fontWeight: selected ? 500 : 400,
+                    transform: selected ? 'scale(1.03)' : 'scale(1)',
+                  }}
+                >
+                  {t.name}
+                </button>
+              )
+            })}
           </div>
         </div>
 
         {/* Bank Card */}
-        <div className="mb-4">
-          <label className="block text-sm text-gray-500 mb-1">银行卡</label>
+        <div className="mb-5">
+          <label style={sectionLabelStyle}>银票</label>
           <select
             value={bankCardId}
             onChange={e => setBankCardId(Number(e.target.value))}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-base bg-white"
+            className="input-ink w-full"
+            style={{ fontSize: '0.95rem', appearance: 'none' }}
           >
-            {cards.length === 0 && <option value={0}>请先在配置中添加银行卡</option>}
+            {cards.length === 0 && <option value={0}>请先在「印鉴」中添加银行卡</option>}
             {cards.map(c => (
               <option key={c.id} value={c.id}>
-                {c.bankName} ({c.cardNumber})
+                {c.bankName} ····{c.cardNumber}
               </option>
             ))}
           </select>
         </div>
 
-        {/* Account Type (auto) */}
+        {/* Account Type seal preview */}
         {selectedCard && (
-          <div className="mb-4 flex items-center gap-2">
-            <span className="text-sm text-gray-500">账户类型：</span>
-            <span
-              className={`text-sm px-2 py-0.5 rounded ${
-                selectedCard.accountType === 'public'
-                  ? 'bg-orange-100 text-orange-700'
-                  : 'bg-blue-100 text-blue-700'
-              }`}
-            >
+          <div className="mb-5 flex items-center gap-2">
+            <span style={{ fontSize: '0.7rem', color: 'var(--color-ink-muted)', letterSpacing: '0.12em' }}>账类</span>
+            <span className={selectedCard.accountType === 'public' ? 'seal-public' : 'seal-private'}>
               {selectedCard.accountType === 'public' ? '公账' : '私账'}
             </span>
           </div>
         )}
 
         {/* Amount */}
-        <div className="mb-4">
-          <label className="block text-sm text-gray-500 mb-1">金额</label>
+        <div className="mb-5">
+          <label style={sectionLabelStyle}>金额</label>
           <div className="relative">
-            <span className="absolute left-3 top-2.5 text-gray-400 text-lg">¥</span>
+            <span
+              className="absolute left-4 top-1/2 -translate-y-1/2 font-serif"
+              style={{ fontSize: '1.5rem', color: 'var(--color-ink)', opacity: 0.25 }}
+            >
+              ¥
+            </span>
             <input
               type="number"
               value={amount}
               onChange={e => setAmount(e.target.value)}
-              placeholder="0.00"
+              placeholder="0"
               step="0.01"
               inputMode="decimal"
-              className="w-full border border-gray-200 rounded-lg pl-8 pr-3 py-2.5 text-lg font-semibold"
+              className="input-ink w-full text-center font-serif font-bold tracking-tight"
+              style={{ fontSize: '2rem', paddingTop: '0.75rem', paddingBottom: '0.75rem' }}
             />
           </div>
         </div>
 
         {/* Note */}
-        <div className="mb-6">
-          <label className="block text-sm text-gray-500 mb-1">备注（选填）</label>
+        <div className="mb-8">
+          <label style={sectionLabelStyle}>附注 · 选填</label>
           <input
             type="text"
             value={note}
             onChange={e => setNote(e.target.value)}
-            placeholder="添加备注..."
-            className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-base"
+            placeholder="事由备注…"
+            className="input-ink w-full"
+            style={{ fontSize: '0.9rem', fontStyle: note ? 'normal' : 'italic' }}
           />
         </div>
 
         {/* Submit */}
         <button
           onClick={handleSubmit}
-          className="w-full bg-blue-700 text-white rounded-xl py-3 text-lg font-semibold active:bg-blue-800"
+          disabled={submitting}
+          className="btn-ink w-full rounded-xl py-3.5 font-serif font-bold tracking-widest text-base
+                     disabled:opacity-50 disabled:scale-100"
+          style={{ letterSpacing: '0.3em' }}
         >
-          提交
+          {submitting ? '…' : '入 账'}
         </button>
 
-        <div className="h-6" />
+        <div className="h-4" />
       </div>
     </div>
   )

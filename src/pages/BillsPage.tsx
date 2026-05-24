@@ -36,24 +36,49 @@ export default function BillsPage() {
         onChange={(y, m) => setCurrent({ year: y, month: m })}
       />
 
-      {shouldRemindBackup() && <BackupBanner />}
+      <div className="divider-ink mx-6" />
+
+      {shouldRemindBackup() && (
+        <div className="mt-3">
+          <BackupBanner />
+        </div>
+      )}
 
       {/* Summary */}
-      <div className="flex gap-4 px-4 py-3 bg-white border-b border-gray-100">
-        <div className="flex-1 text-center">
-          <div className="text-xs text-orange-500">公账合计</div>
-          <div className="text-base font-semibold">¥{formatAmount(publicTotal)}</div>
+      <div className="flex mx-4 mt-3 mb-4">
+        <div className="flex-1 text-center py-3 card-paper mr-2">
+          <div
+            className="font-serif font-bold tracking-wider"
+            style={{ fontSize: '0.65rem', color: 'var(--color-vermillion)', letterSpacing: '0.2em' }}
+          >
+            公账
+          </div>
+          <div className="font-serif font-bold mt-1 tracking-tight" style={{ fontSize: '1.1rem', color: 'var(--color-vermillion)' }}>
+            ¥{formatAmount(publicTotal)}
+          </div>
         </div>
-        <div className="flex-1 text-center">
-          <div className="text-xs text-blue-500">私账合计</div>
-          <div className="text-base font-semibold">¥{formatAmount(privateTotal)}</div>
+        <div className="flex-1 text-center py-3 card-paper ml-2">
+          <div
+            className="font-serif font-bold tracking-wider"
+            style={{ fontSize: '0.65rem', color: 'var(--color-ink-light)', letterSpacing: '0.2em' }}
+          >
+            私账
+          </div>
+          <div className="font-serif font-bold mt-1 tracking-tight" style={{ fontSize: '1.1rem' }}>
+            ¥{formatAmount(privateTotal)}
+          </div>
         </div>
       </div>
 
       {/* Records */}
-      <div>
+      <div className="pb-24">
         {transactions.length === 0 && (
-          <div className="text-center text-gray-400 py-20">暂无记录，点击右下角开始记账</div>
+          <div className="text-center py-20" style={{ color: 'var(--color-ink-muted)' }}>
+            <div className="font-serif mb-2" style={{ fontSize: '2.5rem', opacity: 0.2 }}>簿</div>
+            <div style={{ fontSize: '0.8rem', opacity: 0.45, letterSpacing: '0.08em' }}>
+              尚无记录 · 点右下朱印记一笔
+            </div>
+          </div>
         )}
         {transactions.map(t => (
           <RecordItem
@@ -70,10 +95,16 @@ export default function BillsPage() {
       {/* FAB */}
       <button
         onClick={() => setShowAdd(true)}
-        className="fixed bottom-20 right-4 w-14 h-14 bg-blue-700 text-white rounded-full shadow-lg
-                   flex items-center justify-center text-2xl active:bg-blue-800 z-30"
+        className="fab-ink fixed bottom-24 right-5 w-14 h-14 rounded-2xl flex items-center justify-center z-30"
+        style={{
+          fontFamily: 'var(--font-serif)',
+          fontSize: '1.5rem',
+          fontWeight: 700,
+          background: 'var(--color-vermillion)',
+        }}
+        aria-label="记账"
       >
-        +
+        记
       </button>
 
       {showAdd && (

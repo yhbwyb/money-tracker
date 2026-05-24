@@ -52,28 +52,52 @@ export default function SettingsPage() {
     e.target.value = ''
   }
 
-  return (
-    <div className="p-4">
-      <h1 className="text-xl font-bold mb-4">配置</h1>
+  const sectionTitle: React.CSSProperties = {
+    fontFamily: 'var(--font-serif)',
+    fontWeight: 700,
+    letterSpacing: '0.15em',
+    fontSize: '0.85rem',
+    marginBottom: '0.75rem',
+  }
 
-      {/* Backup Status */}
-      <div className="bg-white rounded-xl p-4 mb-4 border border-gray-200">
-        <div className="text-sm text-gray-500 mb-2">备份状态</div>
-        <div className="text-base">
-          {days === null ? '尚未备份' : `上次备份：${days} 天前`}
+  return (
+    <div className="px-4 pt-4 pb-24">
+      {/* Page header */}
+      <h1
+        className="text-center font-serif font-bold mb-4 tracking-widest"
+        style={{ fontSize: '1.1rem', letterSpacing: '0.3em' }}
+      >
+        印 鉴
+      </h1>
+
+      <div className="divider-ink mb-5" />
+
+      {/* Backup */}
+      <div className="card-paper p-4 mb-4">
+        <h3 style={sectionTitle}>备份 · 留底</h3>
+        <div className="flex items-center justify-between mb-3">
+          <span style={{ fontSize: '0.8rem', color: 'var(--color-ink-light)' }}>
+            {days === null ? '尚未留底' : `上次留底：${days} 天前`}
+          </span>
         </div>
-        <div className="flex gap-2 mt-3">
+        <div className="flex gap-2">
           <button
             onClick={handleExportJSON}
-            className="px-4 py-2 bg-blue-700 text-white rounded-lg text-sm active:bg-blue-800"
+            className="btn-ink flex-1 rounded-lg py-2.5 font-serif font-bold tracking-wider text-sm"
+            style={{ letterSpacing: '0.12em' }}
           >
-            导出 JSON 备份
+            导出留底
           </button>
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm active:bg-gray-200"
+            className="flex-1 rounded-lg py-2.5 font-serif font-bold tracking-wider text-sm border transition-all active:opacity-60"
+            style={{
+              borderColor: 'var(--color-paper-darker)',
+              color: 'var(--color-ink-light)',
+              letterSpacing: '0.12em',
+            }}
           >
-            导入 JSON 恢复
+            还原留底
           </button>
           <input
             ref={fileInputRef}
@@ -86,111 +110,151 @@ export default function SettingsPage() {
       </div>
 
       {/* Bank Cards */}
-      <div className="bg-white rounded-xl p-4 mb-4 border border-gray-200">
+      <div className="card-paper p-4 mb-4">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-semibold">银行卡管理</h2>
+          <h3 style={sectionTitle}>银票</h3>
           <button
             onClick={() => setShowCardForm(!showCardForm)}
-            className="text-blue-700 text-sm"
+            style={{
+              fontFamily: 'var(--font-serif)',
+              fontSize: '1.2rem',
+              color: 'var(--color-ink)',
+              lineHeight: 1,
+            }}
           >
-            + 新增
+            {showCardForm ? '−' : '+'}
           </button>
         </div>
 
         {showCardForm && (
-          <div className="mb-3 p-3 bg-gray-50 rounded-lg space-y-2">
+          <div className="mb-3 p-4 rounded-lg space-y-3" style={{ backgroundColor: 'var(--color-paper-dark)' }}>
             <input
               type="text"
               value={bankName}
               onChange={e => setBankName(e.target.value)}
-              placeholder="银行名称（如：建设银行）"
-              className="w-full border border-gray-200 rounded px-3 py-2 text-sm"
+              placeholder="银行名称"
+              className="input-ink w-full"
+              style={{ fontSize: '0.85rem' }}
             />
             <input
               type="text"
               value={cardNumber}
               onChange={e => setCardNumber(e.target.value)}
-              placeholder="卡号后4位"
+              placeholder="卡号后四位"
               maxLength={4}
-              className="w-full border border-gray-200 rounded px-3 py-2 text-sm"
+              className="input-ink w-full"
+              style={{ fontSize: '0.85rem' }}
             />
             <div className="flex gap-2">
               <button
                 onClick={() => setAccountType('public')}
-                className={`flex-1 py-2 rounded text-sm ${
+                className={`flex-1 py-2 rounded-lg text-sm font-serif tracking-wider transition-all ${
                   accountType === 'public'
-                    ? 'bg-orange-100 text-orange-700 border border-orange-300'
-                    : 'bg-white border border-gray-200 text-gray-500'
+                    ? 'text-white'
+                    : 'bg-white border text-gray-500'
                 }`}
+                style={{
+                  backgroundColor: accountType === 'public' ? 'var(--color-vermillion)' : undefined,
+                  borderColor: accountType !== 'public' ? 'rgba(44,36,22,0.1)' : undefined,
+                }}
               >
                 公账
               </button>
               <button
                 onClick={() => setAccountType('private')}
-                className={`flex-1 py-2 rounded text-sm ${
+                className={`flex-1 py-2 rounded-lg text-sm font-serif tracking-wider transition-all ${
                   accountType === 'private'
-                    ? 'bg-blue-100 text-blue-700 border border-blue-300'
-                    : 'bg-white border border-gray-200 text-gray-500'
+                    ? 'text-white'
+                    : 'bg-white border text-gray-500'
                 }`}
+                style={{
+                  backgroundColor: accountType === 'private' ? 'var(--color-ink)' : undefined,
+                  borderColor: accountType !== 'private' ? 'rgba(44,36,22,0.1)' : undefined,
+                }}
               >
                 私账
               </button>
             </div>
             <button
               onClick={handleAddCard}
-              className="w-full py-2 bg-blue-700 text-white rounded text-sm"
+              className="btn-ink w-full rounded-lg py-2 font-serif font-bold tracking-wider text-sm"
             >
-              保存
+              纳 入
             </button>
           </div>
         )}
 
         {cards.length === 0 && (
-          <div className="text-sm text-gray-400 text-center py-4">暂无银行卡</div>
+          <div className="text-center py-4" style={{ fontSize: '0.8rem', color: 'var(--color-ink-muted)', opacity: 0.5 }}>
+            暂无银票
+          </div>
         )}
         {cards.map(c => (
-          <div key={c.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-            <div className="text-sm">
-              {c.bankName} ({c.cardNumber})
-              <span
-                className={`ml-2 text-xs px-1.5 py-0.5 rounded ${
-                  c.accountType === 'public'
-                    ? 'bg-orange-100 text-orange-700'
-                    : 'bg-blue-100 text-blue-700'
-                }`}
-              >
-                {c.accountType === 'public' ? '公账' : '私账'}
+          <div
+            key={c.id}
+            className="flex items-center justify-between py-2.5"
+            style={{ borderBottom: '1px solid rgba(44,36,22,0.04)' }}
+          >
+            <div className="flex items-center gap-2" style={{ fontSize: '0.85rem' }}>
+              <span>{c.bankName}</span>
+              <span style={{ color: 'var(--color-ink-muted)', fontSize: '0.75rem' }}>
+                ····{c.cardNumber}
+              </span>
+              <span className={c.accountType === 'public' ? 'seal-public' : 'seal-private'}>
+                {c.accountType === 'public' ? '公' : '私'}
               </span>
             </div>
-            <button onClick={() => deleteCard(c.id!)} className="text-red-400 text-xs">删除</button>
+            <button
+              onClick={() => deleteCard(c.id!)}
+              style={{ fontSize: '0.7rem', color: 'var(--color-ink-muted)', opacity: 0.5 }}
+            >
+              删
+            </button>
           </div>
         ))}
       </div>
 
       {/* Event Types */}
-      <div className="bg-white rounded-xl p-4 mb-4 border border-gray-200">
-        <h2 className="font-semibold mb-3">事件类型管理</h2>
+      <div className="card-paper p-4 mb-4">
+        <h3 style={sectionTitle}>事由</h3>
         <div className="flex gap-2 mb-3">
           <input
             type="text"
             value={newTypeName}
             onChange={e => setNewTypeName(e.target.value)}
-            placeholder="新事件名称"
-            className="flex-1 border border-gray-200 rounded px-3 py-2 text-sm"
+            placeholder="新事由…"
+            className="input-ink flex-1"
+            style={{ fontSize: '0.85rem' }}
           />
           <button
             onClick={handleAddType}
-            className="px-4 py-2 bg-blue-700 text-white rounded text-sm active:bg-blue-800"
+            className="btn-ink rounded-lg px-4 py-2 font-serif font-bold tracking-wider text-sm"
+            style={{ letterSpacing: '0.12em' }}
           >
-            新增
+            添
           </button>
         </div>
-        {types.map(t => (
-          <div key={t.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-            <span className="text-sm">{t.name}</span>
-            <button onClick={() => deleteType(t.id!)} className="text-red-400 text-xs">删除</button>
-          </div>
-        ))}
+
+        <div className="flex flex-wrap gap-2">
+          {types.map(t => (
+            <span
+              key={t.id}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm"
+              style={{
+                backgroundColor: 'var(--color-paper-dark)',
+                fontSize: '0.8rem',
+              }}
+            >
+              {t.name}
+              <button
+                onClick={() => deleteType(t.id!)}
+                style={{ fontSize: '0.7rem', color: 'var(--color-ink-muted)', opacity: 0.5, lineHeight: 1 }}
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
       </div>
     </div>
   )

@@ -11,21 +11,28 @@ export default function MonthPicker({ year, month, onChange }: Props) {
   const next = getNextMonth(year, month)
 
   return (
-    <div className="flex items-center justify-center gap-4 py-3 bg-white border-b border-gray-100">
+    <div className="flex items-center justify-between px-6 py-4">
       <button
         onClick={() => onChange(prev.year, prev.month)}
-        className="w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-full text-lg"
+        className="month-btn w-9 h-9 flex items-center justify-center rounded-full text-xl font-serif"
+        style={{ fontFamily: 'var(--font-serif)' }}
       >
-        ‹
+        ←
       </button>
-      <span className="text-lg font-semibold min-w-[120px] text-center">
+
+      <span
+        className="font-serif font-bold tracking-wider"
+        style={{ fontSize: '1.15rem', letterSpacing: '0.15em' }}
+      >
         {formatMonth(year, month)}
       </span>
+
       <button
         onClick={() => onChange(next.year, next.month)}
-        className="w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-full text-lg"
+        className="month-btn w-9 h-9 flex items-center justify-center rounded-full text-xl font-serif"
+        style={{ fontFamily: 'var(--font-serif)' }}
       >
-        ›
+        →
       </button>
     </div>
   )

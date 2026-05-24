@@ -1,7 +1,15 @@
 export default function BackupBanner() {
   return (
-    <div className="bg-yellow-50 border-b border-yellow-200 px-4 py-2 text-sm text-yellow-800 text-center">
-      建议备份数据以确保安全，前往「统计」页导出
+    <div
+      className="mx-4 px-4 py-2.5 text-center text-sm rounded-lg"
+      style={{
+        backgroundColor: 'var(--color-gold-light)',
+        color: 'var(--color-gold)',
+        fontSize: '0.75rem',
+        letterSpacing: '0.05em',
+      }}
+    >
+      ⚠ 久未备份，请前往「账目」页导出，以防数据遗失
     </div>
   )
 }
