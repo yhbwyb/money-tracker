@@ -17,67 +17,76 @@ export default function RecordItem({
   bankCardNumber,
   onDelete,
 }: Props) {
-  const touchStartX = useRef(0)
+  const touchStart = useRef({ x: 0, y: 0, time: 0 })
   const [offsetX, setOffsetX] = useState(0)
-  const [swipedOpen, setSwipedOpen] = useState(false)
 
   function handleTouchStart(e: React.TouchEvent) {
-    touchStartX.current = e.touches[0].clientX
+    touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, time: Date.now() }
   }
 
   function handleTouchMove(e: React.TouchEvent) {
-    const dx = e.touches[0].clientX - touchStartX.current
+    const dx = e.touches[0].clientX - touchStart.current.x
+    // Only track horizontal swipes (ignore vertical scrolls)
+    const dy = Math.abs(e.touches[0].clientY - touchStart.current.y)
+    if (dy > Math.abs(dx) * 0.6) return
     if (dx < 0) {
       setOffsetX(Math.max(dx, -80))
+    } else if (offsetX < 0) {
+      setOffsetX(Math.min(dx - 80, 0))
     }
   }
 
   function handleTouchEnd() {
+    const dt = Date.now() - touchStart.current.time
+    // Quick tap while open → close
+    if (dt < 200 && Math.abs(offsetX) > 10) {
+      // Was a swipe, settle
+    }
     if (offsetX < -40) {
       setOffsetX(-80)
-      setSwipedOpen(true)
     } else {
       setOffsetX(0)
-      setSwipedOpen(false)
     }
   }
 
-  function handleSwipeDelete() {
+  function handleClick() {
+    if (offsetX !== 0) {
+      setOffsetX(0)
+    }
+  }
+
+  function handleDelete() {
     if (confirm('确定删除该记录？')) {
       onDelete()
     }
     setOffsetX(0)
-    setSwipedOpen(false)
-  }
-
-  function closeSwipe() {
-    setOffsetX(0)
-    setSwipedOpen(false)
   }
 
   return (
-    <div className="mx-4 mb-2 relative overflow-hidden rounded-xl" onClick={closeSwipe}>
+    <div className="mx-4 mb-2 relative overflow-hidden rounded-xl">
       {/* Delete action behind */}
       <div
-        className="absolute right-0 top-0 bottom-0 flex items-center justify-center rounded-r-xl cursor-pointer transition-opacity"
+        className="absolute right-0 top-0 bottom-0 flex items-center justify-center rounded-r-xl cursor-pointer"
         style={{
           width: '80px',
           backgroundColor: 'var(--color-vermillion)',
-          opacity: swipedOpen ? 1 : 0,
         }}
-        onClick={handleSwipeDelete}
+        onClick={handleDelete}
       >
         <span className="text-white font-serif font-bold tracking-wider text-sm">删除</span>
       </div>
 
       {/* Card content */}
       <div
-        className="card-paper px-4 py-3 flex items-center justify-between active:opacity-70 transition-transform relative bg-white"
-        style={{ transform: `translateX(${offsetX}px)` }}
+        className="card-paper px-4 py-3 flex items-center justify-between active:opacity-70 relative bg-white"
+        style={{
+          transform: `translateX(${offsetX}px)`,
+          transition: offsetX === 0 ? 'transform 0.2s ease' : 'none',
+        }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        onClick={() => { if (swipedOpen) closeSwipe() }}
+        onClick={handleClick}
       >
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1.5">

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useBankCards } from '../hooks/useBankCards'
 import { useEventTypes } from '../hooks/useEventTypes'
 import { useTransactions } from '../hooks/useTransactions'
@@ -21,6 +21,37 @@ export default function AddRecordSheet({ onClose, onSaved }: Props) {
   const [amount, setAmount] = useState('')
   const [note, setNote] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  // Swipe to dismiss
+  const dragStartY = useRef(0)
+  const [dragY, setDragY] = useState(0)
+  const [dragging, setDragging] = useState(false)
+
+  function handleSheetTouchStart(e: React.TouchEvent) {
+    // Only track drag when at the top of the scrollable area
+    const target = e.currentTarget
+    if (target.scrollTop <= 0) {
+      dragStartY.current = e.touches[0].clientY
+      setDragging(true)
+    }
+  }
+
+  function handleSheetTouchMove(e: React.TouchEvent) {
+    if (!dragging) return
+    const dy = e.touches[0].clientY - dragStartY.current
+    if (dy > 0) {
+      setDragY(dy)
+    }
+  }
+
+  function handleSheetTouchEnd() {
+    setDragging(false)
+    if (dragY > 100) {
+      onClose()
+    } else {
+      setDragY(0)
+    }
+  }
 
   // Sync selections when data loads
   useEffect(() => {
@@ -82,7 +113,12 @@ export default function AddRecordSheet({ onClose, onSaved }: Props) {
         style={{
           backgroundColor: 'var(--color-paper)',
           boxShadow: '0 -8px 40px rgba(44, 36, 22, 0.12)',
+          transform: `translateY(${dragY}px)`,
+          transition: dragging ? 'none' : 'transform 0.2s ease',
         }}
+        onTouchStart={handleSheetTouchStart}
+        onTouchMove={handleSheetTouchMove}
+        onTouchEnd={handleSheetTouchEnd}
         onClick={e => e.stopPropagation()}
       >
         {/* Handle bar */}
