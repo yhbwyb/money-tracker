@@ -22,29 +22,26 @@ export default function AddRecordSheet({ onClose, onSaved }: Props) {
   const [note, setNote] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  // Swipe to dismiss
-  const dragStartY = useRef(0)
+  // Drag handle to dismiss
+  const dragStart = useRef(0)
   const [dragY, setDragY] = useState(0)
   const [dragging, setDragging] = useState(false)
 
-  function handleSheetTouchStart(e: React.TouchEvent) {
-    // Only track drag when at the top of the scrollable area
-    const target = e.currentTarget
-    if (target.scrollTop <= 0) {
-      dragStartY.current = e.touches[0].clientY
-      setDragging(true)
-    }
+  function handleDragStart(e: React.TouchEvent) {
+    dragStart.current = e.touches[0].clientY
+    setDragging(true)
   }
 
-  function handleSheetTouchMove(e: React.TouchEvent) {
+  function handleDragMove(e: React.TouchEvent) {
     if (!dragging) return
-    const dy = e.touches[0].clientY - dragStartY.current
+    const dy = e.touches[0].clientY - dragStart.current
     if (dy > 0) {
       setDragY(dy)
+      e.preventDefault()
     }
   }
 
-  function handleSheetTouchEnd() {
+  function handleDragEnd() {
     setDragging(false)
     if (dragY > 100) {
       onClose()
@@ -116,13 +113,15 @@ export default function AddRecordSheet({ onClose, onSaved }: Props) {
           transform: `translateY(${dragY}px)`,
           transition: dragging ? 'none' : 'transform 0.2s ease',
         }}
-        onTouchStart={handleSheetTouchStart}
-        onTouchMove={handleSheetTouchMove}
-        onTouchEnd={handleSheetTouchEnd}
         onClick={e => e.stopPropagation()}
       >
-        {/* Handle bar */}
-        <div className="flex justify-center mb-5">
+        {/* Drag handle — swipe down to dismiss */}
+        <div
+          className="flex justify-center py-3 -mt-2 mb-2 cursor-grab active:cursor-grabbing touch-none"
+          onTouchStart={handleDragStart}
+          onTouchMove={handleDragMove}
+          onTouchEnd={handleDragEnd}
+        >
           <div
             className="w-10 h-1 rounded-full"
             style={{ backgroundColor: 'var(--color-paper-darker)' }}

@@ -12,6 +12,7 @@ import { getCurrentYearMonth, formatAmount } from '../utils/format'
 export default function BillsPage() {
   const [current, setCurrent] = useState(getCurrentYearMonth)
   const [showAdd, setShowAdd] = useState(false)
+  const [swipedId, setSwipedId] = useState<number | null>(null)
   const { transactions, deleteTransaction } = useTransactions(current.year, current.month)
   const { cards } = useBankCards()
   const { types } = useEventTypes()
@@ -90,7 +91,7 @@ export default function BillsPage() {
       </div>
 
       {/* Records */}
-      <div className="pb-24">
+      <div className="pb-24" onClick={() => setSwipedId(null)}>
         {transactions.length === 0 && (
           <div className="text-center py-20" style={{ color: 'var(--color-ink-muted)' }}>
             <div className="font-serif mb-2" style={{ fontSize: '2.5rem', opacity: 0.2 }}>簿</div>
@@ -106,6 +107,8 @@ export default function BillsPage() {
             eventName={eventMap.get(t.eventTypeId) ?? '未知'}
             bankName={cardMap.get(t.bankCardId)?.bankName ?? '未知'}
             bankCardNumber={cardMap.get(t.bankCardId)?.cardNumber ?? ''}
+            isOpen={swipedId === t.id}
+            onOpen={() => setSwipedId(t.id!)}
             onDelete={() => deleteTransaction(t.id!)}
           />
         ))}

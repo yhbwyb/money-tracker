@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { formatAmount, formatDate } from '../utils/format'
 import type { Transaction } from '../db'
 
@@ -7,6 +7,8 @@ interface Props {
   eventName: string
   bankName: string
   bankCardNumber: string
+  isOpen: boolean
+  onOpen: () => void
   onDelete: () => void
 }
 
@@ -15,70 +17,65 @@ export default function RecordItem({
   eventName,
   bankName,
   bankCardNumber,
+  isOpen,
+  onOpen,
   onDelete,
 }: Props) {
-  const touchStart = useRef({ x: 0, y: 0, time: 0 })
+  const touchStart = useRef({ x: 0, y: 0 })
   const [offsetX, setOffsetX] = useState(0)
 
+  // Sync offsetX with parent's isOpen state
+  useEffect(() => {
+    if (!isOpen) setOffsetX(0)
+  }, [isOpen])
+
   function handleTouchStart(e: React.TouchEvent) {
-    touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, time: Date.now() }
+    touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
   }
 
   function handleTouchMove(e: React.TouchEvent) {
     const dx = e.touches[0].clientX - touchStart.current.x
-    // Only track horizontal swipes (ignore vertical scrolls)
     const dy = Math.abs(e.touches[0].clientY - touchStart.current.y)
+    // Only track horizontal swipes
     if (dy > Math.abs(dx) * 0.6) return
     if (dx < 0) {
       setOffsetX(Math.max(dx, -80))
-    } else if (offsetX < 0) {
-      setOffsetX(Math.min(dx - 80, 0))
     }
   }
 
   function handleTouchEnd() {
-    const dt = Date.now() - touchStart.current.time
-    // Quick tap while open → close
-    if (dt < 200 && Math.abs(offsetX) > 10) {
-      // Was a swipe, settle
-    }
     if (offsetX < -40) {
       setOffsetX(-80)
+      onOpen()
     } else {
       setOffsetX(0)
     }
   }
 
-  function handleClick() {
-    if (offsetX !== 0) {
-      setOffsetX(0)
-    }
-  }
-
-  function handleDelete() {
+  function handleDeleteClick(e: React.MouseEvent) {
+    e.stopPropagation()
     if (confirm('确定删除该记录？')) {
       onDelete()
     }
-    setOffsetX(0)
   }
 
   return (
     <div className="mx-4 mb-2 relative overflow-hidden rounded-xl">
       {/* Delete action behind */}
       <div
-        className="absolute right-0 top-0 bottom-0 flex items-center justify-center rounded-r-xl cursor-pointer"
+        className="absolute right-0 top-0 bottom-0 flex items-center justify-center rounded-r-xl"
         style={{
           width: '80px',
           backgroundColor: 'var(--color-vermillion)',
         }}
-        onClick={handleDelete}
+        onClick={handleDeleteClick}
       >
         <span className="text-white font-serif font-bold tracking-wider text-sm">删除</span>
       </div>
 
-      {/* Card content */}
+      {/* Card */}
       <div
-        className="card-paper px-4 py-3 flex items-center justify-between active:opacity-70 relative bg-white"
+        className="card-paper px-4 py-3 flex items-center justify-between active:opacity-70 relative bg-white select-none"
         style={{
           transform: `translateX(${offsetX}px)`,
           transition: offsetX === 0 ? 'transform 0.2s ease' : 'none',
@@ -86,7 +83,6 @@ export default function RecordItem({
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        onClick={handleClick}
       >
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1.5">
