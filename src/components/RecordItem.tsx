@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react'
 import { formatAmount, formatDate } from '../utils/format'
 import type { Transaction } from '../db'
 
@@ -16,62 +17,95 @@ export default function RecordItem({
   bankCardNumber,
   onDelete,
 }: Props) {
+  const touchStartX = useRef(0)
+  const [offsetX, setOffsetX] = useState(0)
+  const [swipedOpen, setSwipedOpen] = useState(false)
+
+  function handleTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0].clientX
+  }
+
+  function handleTouchMove(e: React.TouchEvent) {
+    const dx = e.touches[0].clientX - touchStartX.current
+    if (dx < 0) {
+      setOffsetX(Math.max(dx, -80))
+    }
+  }
+
+  function handleTouchEnd() {
+    if (offsetX < -40) {
+      setOffsetX(-80)
+      setSwipedOpen(true)
+    } else {
+      setOffsetX(0)
+      setSwipedOpen(false)
+    }
+  }
+
+  function handleSwipeDelete() {
+    if (confirm('确定删除该记录？')) {
+      onDelete()
+    }
+    setOffsetX(0)
+    setSwipedOpen(false)
+  }
+
+  function closeSwipe() {
+    setOffsetX(0)
+    setSwipedOpen(false)
+  }
+
   return (
-    <div
-      className="card-paper mx-4 mb-2 px-4 py-3 flex items-center justify-between active:opacity-70 transition-opacity"
-    >
-      <div className="flex-1 min-w-0">
-        {/* Top row */}
-        <div className="flex items-center gap-2 mb-1.5">
-          <span className="text-xs opacity-40 font-serif" style={{ fontFamily: 'var(--font-serif)' }}>
-            {formatDate(transaction.date)}
-          </span>
-
-          <span
-            className={transaction.accountType === 'public' ? 'seal-public' : 'seal-private'}
-          >
-            {transaction.accountType === 'public' ? '公' : '私'}
-          </span>
-
-          <span
-            className="font-medium"
-            style={{ fontSize: '0.875rem', letterSpacing: '0.03em' }}
-          >
-            {eventName}
-          </span>
-        </div>
-
-        {/* Bottom row */}
-        <div className="flex items-center gap-2">
-          <span className="text-xs opacity-35">
-            {bankName} · {bankCardNumber}
-          </span>
-          {transaction.note && (
-            <span
-              className="text-xs opacity-25 truncate max-w-[120px]"
-              style={{ fontStyle: 'italic' }}
-            >
-              {transaction.note}
-            </span>
-          )}
-        </div>
+    <div className="mx-4 mb-2 relative overflow-hidden rounded-xl" onClick={closeSwipe}>
+      {/* Delete action behind */}
+      <div
+        className="absolute right-0 top-0 bottom-0 flex items-center justify-center rounded-r-xl cursor-pointer transition-opacity"
+        style={{
+          width: '80px',
+          backgroundColor: 'var(--color-vermillion)',
+          opacity: swipedOpen ? 1 : 0,
+        }}
+        onClick={handleSwipeDelete}
+      >
+        <span className="text-white font-serif font-bold tracking-wider text-sm">删除</span>
       </div>
 
-      {/* Amount + Delete */}
-      <div className="flex items-center gap-3 flex-shrink-0">
-        <span
-          className="font-serif font-bold tracking-tight tabular-nums"
-          style={{ fontSize: '1.05rem', letterSpacing: '-0.02em' }}
-        >
-          ¥{formatAmount(transaction.amount)}
-        </span>
-        <button
-          onClick={onDelete}
-          className="opacity-0 group-hover:opacity-100 transition-opacity"
-          style={{ color: 'var(--color-ink-muted)', fontSize: '0.7rem', padding: '0.25rem' }}
-        >
-          删
-        </button>
+      {/* Card content */}
+      <div
+        className="card-paper px-4 py-3 flex items-center justify-between active:opacity-70 transition-transform relative bg-white"
+        style={{ transform: `translateX(${offsetX}px)` }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="text-xs opacity-40 font-serif" style={{ fontFamily: 'var(--font-serif)' }}>
+              {formatDate(transaction.date)}
+            </span>
+            <span className={transaction.accountType === 'public' ? 'seal-public' : 'seal-private'}>
+              {transaction.accountType === 'public' ? '公' : '私'}
+            </span>
+            <span className="font-medium" style={{ fontSize: '0.875rem', letterSpacing: '0.03em' }}>
+              {eventName}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs opacity-35">
+              {bankName} · {bankCardNumber}
+            </span>
+            {transaction.note && (
+              <span className="text-xs opacity-25 truncate max-w-[120px]" style={{ fontStyle: 'italic' }}>
+                {transaction.note}
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-3 flex-shrink-0">
+          <span className="font-serif font-bold tracking-tight tabular-nums" style={{ fontSize: '1.05rem', letterSpacing: '-0.02em' }}>
+            ¥{formatAmount(transaction.amount)}
+          </span>
+        </div>
       </div>
     </div>
   )

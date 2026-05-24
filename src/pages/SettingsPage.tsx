@@ -4,6 +4,7 @@ import { useEventTypes } from '../hooks/useEventTypes'
 import { useBackup } from '../hooks/useBackup'
 import { exportFullJSON } from '../utils/export'
 import { importFullJSON } from '../utils/import'
+import db from '../db'
 
 export default function SettingsPage() {
   const { cards, addCard, deleteCard } = useBankCards()
@@ -18,6 +19,26 @@ export default function SettingsPage() {
   const [newTypeName, setNewTypeName] = useState('')
 
   const days = daysSinceLastBackup()
+
+  async function handleDeleteCard(id: number) {
+    const count = await db.transactions.where('bankCardId').equals(id).count()
+    const msg = count > 0
+      ? `该银行卡有 ${count} 条关联记录，删除后相关记录将显示为"未知"。确定删除？`
+      : '确定删除该银行卡？'
+    if (confirm(msg)) {
+      await deleteCard(id)
+    }
+  }
+
+  async function handleDeleteType(id: number) {
+    const count = await db.transactions.where('eventTypeId').equals(id).count()
+    const msg = count > 0
+      ? `该事由有 ${count} 条关联记录，删除后相关记录将显示为"未知"。确定删除？`
+      : '确定删除该事由？'
+    if (confirm(msg)) {
+      await deleteType(id)
+    }
+  }
 
   async function handleAddCard() {
     if (!cardNumber.trim() || !bankName.trim()) return
@@ -205,7 +226,7 @@ export default function SettingsPage() {
               </span>
             </div>
             <button
-              onClick={() => deleteCard(c.id!)}
+              onClick={() => handleDeleteCard(c.id!)}
               style={{ fontSize: '0.7rem', color: 'var(--color-ink-muted)', opacity: 0.5 }}
             >
               删
@@ -247,7 +268,7 @@ export default function SettingsPage() {
             >
               {t.name}
               <button
-                onClick={() => deleteType(t.id!)}
+                onClick={() => handleDeleteType(t.id!)}
                 style={{ fontSize: '0.7rem', color: 'var(--color-ink-muted)', opacity: 0.5, lineHeight: 1 }}
               >
                 ×

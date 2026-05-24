@@ -24,7 +24,3 @@ export function useTransactions(year: number, month: number) {
     },
   }
 }
-
-export function useTransactionCount(): number | undefined {
-  return useLiveQuery(() => db.transactions.count())
-}

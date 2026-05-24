@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import MonthPicker from '../components/MonthPicker'
 import RecordItem from '../components/RecordItem'
 import BackupBanner from '../components/BackupBanner'
@@ -15,18 +15,27 @@ export default function BillsPage() {
   const { transactions, deleteTransaction } = useTransactions(current.year, current.month)
   const { cards } = useBankCards()
   const { types } = useEventTypes()
-  const { shouldRemindBackup } = useBackup()
+  const { shouldRemindBackup, shouldRemindByCount, dismissCountReminder } = useBackup()
 
-  const eventMap = new Map(types.map(t => [t.id, t.name]))
-  const cardMap = new Map(cards.map(c => [c.id, c]))
+  const showCountReminder = shouldRemindByCount()
 
-  const publicTotal = transactions
-    .filter(t => t.accountType === 'public')
-    .reduce((s, t) => s + t.amount, 0)
+  const eventMap = useMemo(
+    () => new Map(types.map(t => [t.id, t.name])),
+    [types],
+  )
+  const cardMap = useMemo(
+    () => new Map(cards.map(c => [c.id, c])),
+    [cards],
+  )
 
-  const privateTotal = transactions
-    .filter(t => t.accountType === 'private')
-    .reduce((s, t) => s + t.amount, 0)
+  const publicTotal = useMemo(
+    () => transactions.filter(t => t.accountType === 'public').reduce((s, t) => s + t.amount, 0),
+    [transactions],
+  )
+  const privateTotal = useMemo(
+    () => transactions.filter(t => t.accountType === 'private').reduce((s, t) => s + t.amount, 0),
+    [transactions],
+  )
 
   return (
     <div>
@@ -41,6 +50,16 @@ export default function BillsPage() {
       {shouldRemindBackup() && (
         <div className="mt-3">
           <BackupBanner />
+        </div>
+      )}
+
+      {showCountReminder && (
+        <div className="mx-4 mt-3 px-4 py-2.5 rounded-lg flex items-center justify-between"
+          style={{ backgroundColor: 'var(--color-jade-light)', color: 'var(--color-jade)', fontSize: '0.75rem', letterSpacing: '0.05em' }}>
+          <span>已记 30+ 笔，建议前往「印鉴」留底备份</span>
+          <button onClick={dismissCountReminder} className="ml-2 font-bold opacity-60 hover:opacity-100">
+            ✕
+          </button>
         </div>
       )}
 

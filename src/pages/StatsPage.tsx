@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import {
   PieChart, Pie, Cell, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -21,33 +21,35 @@ export default function StatsPage() {
   const { types } = useEventTypes()
   const { daysSinceLastBackup, markBackupDone } = useBackup()
 
-  const publicTotal = transactions
-    .filter(t => t.accountType === 'public')
-    .reduce((s, t) => s + t.amount, 0)
-
-  const privateTotal = transactions
-    .filter(t => t.accountType === 'private')
-    .reduce((s, t) => s + t.amount, 0)
-
+  const publicTotal = useMemo(
+    () => transactions.filter(t => t.accountType === 'public').reduce((s, t) => s + t.amount, 0),
+    [transactions],
+  )
+  const privateTotal = useMemo(
+    () => transactions.filter(t => t.accountType === 'private').reduce((s, t) => s + t.amount, 0),
+    [transactions],
+  )
   const total = publicTotal + privateTotal
 
-  const eventData = types.map(t => {
-    const sum = transactions
-      .filter(tx => tx.eventTypeId === t.id)
-      .reduce((s, tx) => s + tx.amount, 0)
-    return { name: t.name, value: sum }
-  }).filter(d => d.value > 0)
+  const eventData = useMemo(
+    () => types.map(t => {
+      const sum = transactions.filter(tx => tx.eventTypeId === t.id).reduce((s, tx) => s + tx.amount, 0)
+      return { name: t.name, value: sum }
+    }).filter(d => d.value > 0),
+    [types, transactions],
+  )
 
   const { end } = getMonthRange(current.year, current.month)
   const daysInMonth = parseInt(end.split('-')[2])
-  const dailyData = Array.from({ length: daysInMonth }, (_, i) => {
-    const day = String(i + 1).padStart(2, '0')
-    const dateStr = `${current.year}-${String(current.month).padStart(2, '0')}-${day}`
-    const sum = transactions
-      .filter(t => t.date === dateStr)
-      .reduce((s, t) => s + t.amount, 0)
-    return { date: `${i + 1}日`, amount: sum }
-  })
+  const dailyData = useMemo(
+    () => Array.from({ length: daysInMonth }, (_, i) => {
+      const day = String(i + 1).padStart(2, '0')
+      const dateStr = `${current.year}-${String(current.month).padStart(2, '0')}-${day}`
+      const sum = transactions.filter(t => t.date === dateStr).reduce((s, t) => s + t.amount, 0)
+      return { date: `${i + 1}日`, amount: sum }
+    }),
+    [transactions, daysInMonth, current.year, current.month],
+  )
 
   async function handleExportExcel() {
     await exportExcel(current.year, current.month)
