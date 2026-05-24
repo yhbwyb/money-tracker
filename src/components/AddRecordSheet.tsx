@@ -104,7 +104,12 @@ export default function AddRecordSheet({ onClose, onSaved }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end" style={{ backgroundColor: 'rgba(44, 36, 22, 0.4)', backdropFilter: 'blur(2px)' }} onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-end"
+      style={{ backgroundColor: 'rgba(44, 36, 22, 0.4)', backdropFilter: 'blur(2px)', touchAction: 'none' }}
+      onClick={onClose}
+      onTouchMove={e => e.preventDefault()}
+    >
       <div
         className="w-full max-w-md mx-auto rounded-t-2xl px-6 pt-6 pb-8 max-h-[88vh] overflow-y-auto"
         style={{
@@ -114,6 +119,7 @@ export default function AddRecordSheet({ onClose, onSaved }: Props) {
           transition: dragging ? 'none' : 'transform 0.2s ease',
         }}
         onClick={e => e.stopPropagation()}
+        onTouchMove={e => e.stopPropagation()}
       >
         {/* Drag handle — swipe down to dismiss */}
         <div

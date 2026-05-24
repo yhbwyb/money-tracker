@@ -91,7 +91,7 @@ export default function BillsPage() {
       </div>
 
       {/* Records */}
-      <div className="pb-24" onClick={() => setSwipedId(null)}>
+      <div className="pb-24" onTouchStart={() => setSwipedId(null)}>
         {transactions.length === 0 && (
           <div className="text-center py-20" style={{ color: 'var(--color-ink-muted)' }}>
             <div className="font-serif mb-2" style={{ fontSize: '2.5rem', opacity: 0.2 }}>簿</div>
