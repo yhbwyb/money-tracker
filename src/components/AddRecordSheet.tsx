@@ -26,8 +26,18 @@ export default function AddRecordSheet({ onClose, onSaved }: Props) {
 
   async function handleSubmit() {
     const amt = parseFloat(amount)
-    if (!amt || amt <= 0) return
-    if (!eventTypeId || !bankCardId) return
+    if (!amt || amt <= 0) {
+      alert('请输入金额')
+      return
+    }
+    if (cards.length === 0) {
+      alert('请先在「印鉴」中添加银行卡')
+      return
+    }
+    if (types.length === 0) {
+      alert('请先在「印鉴」中添加事由')
+      return
+    }
 
     setSubmitting(true)
     await addTransaction({
