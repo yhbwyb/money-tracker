@@ -114,7 +114,7 @@ export default function BillsPage() {
       {/* FAB */}
       <button
         onClick={() => setShowAdd(true)}
-        className="fab-ink fixed bottom-24 right-5 w-14 h-14 rounded-2xl flex items-center justify-center z-30"
+        className="fab-ink fixed bottom-28 right-5 w-14 h-14 rounded-2xl flex items-center justify-center z-30"
         style={{
           fontFamily: 'var(--font-serif)',
           fontSize: '1.5rem',
