@@ -18,8 +18,6 @@ export default function StatsPage() {
   const { types } = useEventTypes()
   const { daysSinceLastBackup, markBackupDone } = useBackup()
 
-  const eventMap = new Map(types.map(t => [t.id, t.name]))
-
   const publicTotal = transactions
     .filter(t => t.accountType === 'public')
     .reduce((s, t) => s + t.amount, 0)
@@ -37,7 +35,7 @@ export default function StatsPage() {
     return { name: t.name, value: sum }
   }).filter(d => d.value > 0)
 
-  const { start, end } = getMonthRange(current.year, current.month)
+  const { end } = getMonthRange(current.year, current.month)
   const daysInMonth = parseInt(end.split('-')[2])
   const dailyData = Array.from({ length: daysInMonth }, (_, i) => {
     const day = String(i + 1).padStart(2, '0')
