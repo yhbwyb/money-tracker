@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useBankCards } from '../hooks/useBankCards'
 import { useEventTypes } from '../hooks/useEventTypes'
 import { useTransactions } from '../hooks/useTransactions'
@@ -16,11 +16,24 @@ export default function AddRecordSheet({ onClose, onSaved }: Props) {
   const { types } = useEventTypes()
 
   const [date, setDate] = useState(todayStr())
-  const [eventTypeId, setEventTypeId] = useState(types[0]?.id ?? 0)
-  const [bankCardId, setBankCardId] = useState(cards[0]?.id ?? 0)
+  const [eventTypeId, setEventTypeId] = useState(0)
+  const [bankCardId, setBankCardId] = useState(0)
   const [amount, setAmount] = useState('')
   const [note, setNote] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  // Sync selections when data loads
+  useEffect(() => {
+    if (types.length > 0 && eventTypeId === 0) {
+      setEventTypeId(types[0].id!)
+    }
+  }, [types, eventTypeId])
+
+  useEffect(() => {
+    if (cards.length > 0 && bankCardId === 0) {
+      setBankCardId(cards[0].id!)
+    }
+  }, [cards, bankCardId])
 
   const selectedCard = cards.find(c => c.id === bankCardId)
 
