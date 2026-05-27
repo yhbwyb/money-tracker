@@ -9,7 +9,7 @@ const tabs = [
 export default function Layout() {
   const location = useLocation()
   return (
-    <div className="min-h-screen pb-20" style={{ backgroundColor: 'var(--color-paper)' }}>
+    <div className="min-h-screen pb-20 safe-area-top" style={{ backgroundColor: 'var(--color-paper)' }}>
       <div className="max-w-md mx-auto">
         <Outlet />
       </div>
