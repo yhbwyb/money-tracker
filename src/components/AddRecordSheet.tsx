@@ -1,8 +1,26 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useBankCards } from '../hooks/useBankCards'
 import { useEventTypes } from '../hooks/useEventTypes'
 import { useTransactions } from '../hooks/useTransactions'
 import { getCurrentYearMonth, todayStr } from '../utils/format'
+
+const NOTE_HISTORY_KEY = 'noteHistory'
+const MAX_HISTORY = 20
+
+function getNoteHistory(): string[] {
+  try {
+    const raw = localStorage.getItem(NOTE_HISTORY_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch { return [] }
+}
+
+function saveNoteToHistory(note: string) {
+  const trimmed = note.trim()
+  if (!trimmed) return
+  const list = getNoteHistory().filter(n => n !== trimmed)
+  list.unshift(trimmed)
+  localStorage.setItem(NOTE_HISTORY_KEY, JSON.stringify(list.slice(0, MAX_HISTORY)))
+}
 
 interface Props {
   onClose: () => void
@@ -20,6 +38,7 @@ export default function AddRecordSheet({ onClose, onSaved }: Props) {
   const [bankCardId, setBankCardId] = useState(0)
   const [amount, setAmount] = useState('')
   const [note, setNote] = useState('')
+  const [noteHistory, setNoteHistory] = useState<string[]>(getNoteHistory)
   const [submitting, setSubmitting] = useState(false)
 
   // Drag handle to dismiss
@@ -65,6 +84,12 @@ export default function AddRecordSheet({ onClose, onSaved }: Props) {
 
   const selectedCard = cards.find(c => c.id === bankCardId)
 
+  const filteredNotes = useMemo(() => {
+    if (!note.trim()) return noteHistory.slice(0, 6)
+    const q = note.trim().toLowerCase()
+    return noteHistory.filter(n => n.toLowerCase().includes(q)).slice(0, 6)
+  }, [note, noteHistory])
+
   async function handleSubmit() {
     const amt = parseFloat(amount)
     if (!amt || amt <= 0) {
@@ -81,6 +106,8 @@ export default function AddRecordSheet({ onClose, onSaved }: Props) {
     }
 
     setSubmitting(true)
+    saveNoteToHistory(note)
+    setNoteHistory(getNoteHistory())
     await addTransaction({
       date,
       eventTypeId,
@@ -232,7 +259,7 @@ export default function AddRecordSheet({ onClose, onSaved }: Props) {
         </div>
 
         {/* Note */}
-        <div className="mb-8">
+        <div className="mb-5">
           <label style={sectionLabelStyle}>附注 · 选填</label>
           <input
             type="text"
@@ -240,8 +267,27 @@ export default function AddRecordSheet({ onClose, onSaved }: Props) {
             onChange={e => setNote(e.target.value)}
             placeholder="事由备注…"
             className="input-ink w-full"
-            style={{ fontSize: '0.9rem', fontStyle: note ? 'normal' : 'italic' }}
+            style={{ fontSize: '0.9rem' }}
           />
+          {filteredNotes.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {filteredNotes.map((n, i) => (
+                <button
+                  key={i}
+                  onClick={() => setNote(n)}
+                  className="px-3 py-1 rounded-full text-sm transition-all duration-150"
+                  style={{
+                    backgroundColor: note === n ? 'var(--color-ink)' : 'white',
+                    color: note === n ? 'var(--color-paper)' : 'var(--color-ink-light)',
+                    border: note === n ? '1px solid var(--color-ink)' : '1px solid rgba(44,36,22,0.1)',
+                    fontSize: '0.8rem',
+                  }}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Submit */}

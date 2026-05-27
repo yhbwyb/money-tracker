@@ -277,6 +277,13 @@ export default function SettingsPage() {
           ))}
         </div>
       </div>
+
+      <div
+        className="text-center pb-8"
+        style={{ fontSize: '0.7rem', color: 'var(--color-ink-muted)', opacity: 0.45 }}
+      >
+        V2.0.0
+      </div>
     </div>
   )
 }
