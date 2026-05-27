@@ -7,10 +7,10 @@ import { useTransactions } from '../hooks/useTransactions'
 import { useBankCards } from '../hooks/useBankCards'
 import { useEventTypes } from '../hooks/useEventTypes'
 import { useBackup } from '../hooks/useBackup'
-import { formatAmount } from '../utils/format'
+import { getCurrentYearMonth, formatAmount } from '../utils/format'
 
 export default function BillsPage() {
-  const [filterMonth, setFilterMonth] = useState<{ year: number; month: number } | null>(null)
+  const [filterMonth, setFilterMonth] = useState(getCurrentYearMonth)
   const [showAdd, setShowAdd] = useState(false)
   const [swipedId, setSwipedId] = useState<number | null>(null)
   const { transactions, deleteTransaction } = useTransactions(filterMonth?.year, filterMonth?.month)
@@ -43,10 +43,9 @@ export default function BillsPage() {
   return (
     <div onTouchStart={closeAllSwipes}>
       <MonthPicker
-        year={filterMonth?.year ?? null}
-        month={filterMonth?.month ?? null}
+        year={filterMonth.year}
+        month={filterMonth.month}
         onChange={(y, m) => setFilterMonth({ year: y, month: m })}
-        onClear={() => setFilterMonth(null)}
       />
 
       <div className="divider-ink mx-6" />

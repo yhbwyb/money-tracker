@@ -1,14 +1,11 @@
 import { useState, useMemo } from 'react'
-import {
-  PieChart, Pie, Cell, BarChart, Bar,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-} from 'recharts'
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import MonthPicker from '../components/MonthPicker'
 import { useTransactions } from '../hooks/useTransactions'
 import { useEventTypes } from '../hooks/useEventTypes'
 import { useBackup } from '../hooks/useBackup'
-import { exportExcel, exportCSV } from '../utils/export'
-import { getCurrentYearMonth, getMonthRange, formatAmount } from '../utils/format'
+import { exportExcel, exportAllExcel } from '../utils/export'
+import { getCurrentYearMonth, formatAmount } from '../utils/format'
 
 const COLORS = [
   '#2c2416', '#c43a31', '#b8954a', '#5b8c5a',
@@ -39,26 +36,27 @@ export default function StatsPage() {
     [types, transactions],
   )
 
-  const { end } = getMonthRange(current.year, current.month)
-  const daysInMonth = parseInt(end.split('-')[2])
-  const dailyData = useMemo(
-    () => Array.from({ length: daysInMonth }, (_, i) => {
-      const day = String(i + 1).padStart(2, '0')
-      const dateStr = `${current.year}-${String(current.month).padStart(2, '0')}-${day}`
-      const sum = transactions.filter(t => t.date === dateStr).reduce((s, t) => s + t.amount, 0)
-      return { date: `${i + 1}日`, amount: sum }
-    }),
-    [transactions, daysInMonth, current.year, current.month],
-  )
-
   async function handleExportExcel() {
     await exportExcel(current.year, current.month)
     markBackupDone()
   }
 
-  async function handleExportCSV() {
-    await exportCSV(current.year, current.month)
+  async function handleExportAll() {
+    await exportAllExcel()
     markBackupDone()
+  }
+
+  const RADIAN = Math.PI / 180
+  function renderPieLabel({ cx, cy, midAngle, innerRadius, outerRadius, name, percent }: any) {
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5
+    const x = cx + radius * Math.cos(-midAngle * RADIAN)
+    const y = cy + radius * Math.sin(-midAngle * RADIAN)
+    return (
+      <text x={x} y={y} fill="var(--color-ink)" textAnchor="middle" dominantBaseline="central"
+        fontSize={11} fontWeight={500} fontFamily="var(--font-serif)">
+        {name} {(percent * 100).toFixed(0)}%
+      </text>
+    )
   }
 
   return (
@@ -135,9 +133,7 @@ export default function StatsPage() {
                   innerRadius={48}
                   outerRadius={82}
                   dataKey="value"
-                  label={({ name, percent }) =>
-                    `${name} ${(percent * 100).toFixed(0)}%`
-                  }
+                  label={renderPieLabel}
                   labelLine={false}
                 >
                   {eventData.map((_, i) => (
@@ -158,45 +154,6 @@ export default function StatsPage() {
           </div>
         )}
 
-        {/* Bar Chart */}
-        {transactions.length > 0 && (
-          <div className="card-paper p-4 mb-4">
-            <h3
-              className="font-serif font-bold mb-3 tracking-wider"
-              style={{ fontSize: '0.85rem', letterSpacing: '0.15em' }}
-            >
-              日度流水
-            </h3>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={dailyData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(44,36,22,0.06)" />
-                <XAxis
-                  dataKey="date"
-                  tick={{ fontSize: 9, fill: 'var(--color-ink-muted)' }}
-                  interval={Math.ceil(daysInMonth / 15)}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  tick={{ fontSize: 9, fill: 'var(--color-ink-muted)' }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <Tooltip
-                  formatter={(v: number) => [`¥${formatAmount(v)}`, '金额']}
-                  contentStyle={{
-                    background: 'white',
-                    border: '1px solid rgba(44,36,22,0.08)',
-                    borderRadius: '0.5rem',
-                    fontSize: '0.8rem',
-                  }}
-                />
-                <Bar dataKey="amount" fill="var(--color-ink)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        )}
-
         {/* Export buttons */}
         <div className="flex gap-2 pb-24">
           <button
@@ -204,18 +161,14 @@ export default function StatsPage() {
             className="btn-ink flex-1 rounded-xl py-3 font-serif font-bold tracking-widest text-sm"
             style={{ letterSpacing: '0.15em' }}
           >
-            导出 Excel
+            导出当月
           </button>
           <button
-            onClick={handleExportCSV}
-            className="flex-1 py-3 rounded-xl font-serif font-bold tracking-widest text-sm border transition-all active:opacity-60"
-            style={{
-              borderColor: 'var(--color-paper-darker)',
-              color: 'var(--color-ink-light)',
-              letterSpacing: '0.15em',
-            }}
+            onClick={handleExportAll}
+            className="btn-ink flex-1 rounded-xl py-3 font-serif font-bold tracking-widest text-sm"
+            style={{ letterSpacing: '0.15em' }}
           >
-            导出 CSV
+            导出全部
           </button>
         </div>
       </div>

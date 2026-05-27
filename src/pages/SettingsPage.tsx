@@ -282,7 +282,7 @@ export default function SettingsPage() {
         className="text-center pb-8"
         style={{ fontSize: '0.7rem', color: 'var(--color-ink-muted)', opacity: 0.45 }}
       >
-        V2.0.1
+        V2.1.0
       </div>
     </div>
   )

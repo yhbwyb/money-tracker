@@ -13,19 +13,17 @@ interface ExportRow {
   备注: string
 }
 
-export async function exportExcel(year: number, month: number): Promise<void> {
-  const { start, end } = getMonthRange(year, month)
-  const transactions = await db.transactions
-    .where('date')
-    .between(start, end, true, true)
-    .toArray()
+const COLS = [
+  { wch: 12 }, // 日期
+  { wch: 8 },  // 事件
+  { wch: 12 }, // 银行卡
+  { wch: 10 }, // 卡号
+  { wch: 8 },  // 公私账
+  { wch: 12 }, // 金额
+  { wch: 20 }, // 备注
+]
 
-  const eventTypes = await db.eventTypes.toArray()
-  const bankCards = await db.bankCards.toArray()
-
-  const eventMap = new Map(eventTypes.map(e => [e.id, e.name]))
-  const cardMap = new Map(bankCards.map(c => [c.id, c]))
-
+function buildSheet(transactions: any[], eventMap: Map<number | undefined, string>, cardMap: Map<number | undefined, any>): XLSX.WorkSheet {
   const rows: ExportRow[] = transactions.map(t => {
     const card = cardMap.get(t.bankCardId)
     return {
@@ -40,10 +38,44 @@ export async function exportExcel(year: number, month: number): Promise<void> {
   })
 
   const ws = XLSX.utils.json_to_sheet(rows)
+  ws['!cols'] = COLS
+  return ws
+}
+
+export async function exportExcel(year: number, month: number): Promise<void> {
+  const { start, end } = getMonthRange(year, month)
+  const transactions = await db.transactions
+    .where('date')
+    .between(start, end, true, true)
+    .toArray()
+
+  const eventTypes = await db.eventTypes.toArray()
+  const bankCards = await db.bankCards.toArray()
+  const eventMap = new Map(eventTypes.map(e => [e.id, e.name]))
+  const cardMap = new Map(bankCards.map(c => [c.id, c]))
+
+  const ws = buildSheet(transactions, eventMap, cardMap)
   const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, '账单')
+  XLSX.utils.book_append_sheet(wb, ws, '当月账单')
   const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
   saveAs(new Blob([buf]), `记账本_${year}年${month}月.xlsx`)
+}
+
+export async function exportAllExcel(): Promise<void> {
+  const [transactions, eventTypes, bankCards] = await Promise.all([
+    db.transactions.orderBy('date').toArray(),
+    db.eventTypes.toArray(),
+    db.bankCards.toArray(),
+  ])
+
+  const eventMap = new Map(eventTypes.map(e => [e.id, e.name]))
+  const cardMap = new Map(bankCards.map(c => [c.id, c]))
+
+  const ws = buildSheet(transactions, eventMap, cardMap)
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, '全部账单')
+  const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+  saveAs(new Blob([buf]), `记账本_全部数据_${todayStr()}.xlsx`)
 }
 
 export async function exportCSV(year: number, month: number): Promise<void> {
