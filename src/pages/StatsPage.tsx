@@ -46,18 +46,7 @@ export default function StatsPage() {
     markBackupDone()
   }
 
-  const RADIAN = Math.PI / 180
-  function renderPieLabel({ cx, cy, midAngle, innerRadius, outerRadius, name, percent }: any) {
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.5
-    const x = cx + radius * Math.cos(-midAngle * RADIAN)
-    const y = cy + radius * Math.sin(-midAngle * RADIAN)
-    return (
-      <text x={x} y={y} fill="var(--color-ink)" textAnchor="middle" dominantBaseline="central"
-        fontSize={11} fontWeight={500} fontFamily="var(--font-serif)">
-        {name} {(percent * 100).toFixed(0)}%
-      </text>
-    )
-  }
+  const totalValue = eventData.reduce((s, d) => s + d.value, 0)
 
   return (
     <div>
@@ -119,22 +108,21 @@ export default function StatsPage() {
         {eventData.length > 0 && (
           <div className="card-paper p-4 mb-4">
             <h3
-              className="font-serif font-bold mb-3 tracking-wider"
+              className="font-serif font-bold mb-2 tracking-wider"
               style={{ fontSize: '0.85rem', letterSpacing: '0.15em' }}
             >
               事由分布
             </h3>
-            <ResponsiveContainer width="100%" height={220}>
+            <ResponsiveContainer width="100%" height={180}>
               <PieChart>
                 <Pie
                   data={eventData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={48}
-                  outerRadius={82}
+                  innerRadius={40}
+                  outerRadius={72}
                   dataKey="value"
-                  label={renderPieLabel}
-                  labelLine={false}
+                  label={false}
                 >
                   {eventData.map((_, i) => (
                     <Cell key={i} fill={COLORS[i % COLORS.length]} stroke="none" />
@@ -151,6 +139,21 @@ export default function StatsPage() {
                 />
               </PieChart>
             </ResponsiveContainer>
+            {/* Legend */}
+            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 justify-center">
+              {eventData.map((d, i) => {
+                const pct = totalValue > 0 ? ((d.value / totalValue) * 100).toFixed(0) : '0'
+                return (
+                  <div key={i} className="flex items-center gap-1.5" style={{ fontSize: '0.7rem', color: 'var(--color-ink-light)' }}>
+                    <span style={{
+                      display: 'inline-block', width: 8, height: 8, borderRadius: '50%',
+                      backgroundColor: COLORS[i % COLORS.length], flexShrink: 0,
+                    }} />
+                    {d.name} {pct}%
+                  </div>
+                )
+              })}
+            </div>
           </div>
         )}
 
