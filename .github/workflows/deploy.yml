@@ -27,6 +27,8 @@ jobs:
 
       - name: Build
         run: npx vite build
+        env:
+          BASE_URL: /money-tracker/
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v4
