@@ -24,7 +24,7 @@ function saveNoteToHistory(note: string) {
 
 interface Props {
   onClose: () => void
-  onSaved: () => void
+  onSaved: (date: string) => void
 }
 
 export default function AddRecordSheet({ onClose, onSaved }: Props) {
@@ -118,7 +118,7 @@ export default function AddRecordSheet({ onClose, onSaved }: Props) {
     })
     setTimeout(() => {
       setSubmitting(false)
-      onSaved()
+      onSaved(date)
     }, 150)
   }
 

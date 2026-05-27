@@ -134,7 +134,11 @@ export default function BillsPage() {
       {showAdd && (
         <AddRecordSheet
           onClose={() => setShowAdd(false)}
-          onSaved={() => setShowAdd(false)}
+          onSaved={(date) => {
+            const [y, m] = date.split('-')
+            setCurrent({ year: parseInt(y), month: parseInt(m) })
+            setShowAdd(false)
+          }}
         />
       )}
     </div>
