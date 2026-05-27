@@ -2,15 +2,20 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import db, { type Transaction } from '../db'
 import { getMonthRange } from '../utils/format'
 
-export function useTransactions(year: number, month: number) {
-  const { start, end } = getMonthRange(year, month)
+export function useTransactions(year?: number, month?: number) {
+  const range = year != null && month != null ? getMonthRange(year, month) : null
 
   const transactions = useLiveQuery(
-    () => db.transactions
-      .where('date')
-      .between(start, end, true, true)
-      .reverse()
-      .sortBy('createdAt'),
+    () => {
+      if (range) {
+        return db.transactions
+          .where('date')
+          .between(range.start, range.end, true, true)
+          .reverse()
+          .sortBy('createdAt')
+      }
+      return db.transactions.orderBy('createdAt').reverse().toArray()
+    },
     [year, month]
   )
 

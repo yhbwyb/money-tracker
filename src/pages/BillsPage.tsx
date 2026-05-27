@@ -7,13 +7,13 @@ import { useTransactions } from '../hooks/useTransactions'
 import { useBankCards } from '../hooks/useBankCards'
 import { useEventTypes } from '../hooks/useEventTypes'
 import { useBackup } from '../hooks/useBackup'
-import { getCurrentYearMonth, formatAmount } from '../utils/format'
+import { formatAmount } from '../utils/format'
 
 export default function BillsPage() {
-  const [current, setCurrent] = useState(getCurrentYearMonth)
+  const [filterMonth, setFilterMonth] = useState<{ year: number; month: number } | null>(null)
   const [showAdd, setShowAdd] = useState(false)
   const [swipedId, setSwipedId] = useState<number | null>(null)
-  const { transactions, deleteTransaction } = useTransactions(current.year, current.month)
+  const { transactions, deleteTransaction } = useTransactions(filterMonth?.year, filterMonth?.month)
   const { cards } = useBankCards()
   const { types } = useEventTypes()
   const { shouldRemindBackup, shouldRemindByCount, dismissCountReminder } = useBackup()
@@ -43,9 +43,10 @@ export default function BillsPage() {
   return (
     <div onTouchStart={closeAllSwipes}>
       <MonthPicker
-        year={current.year}
-        month={current.month}
-        onChange={(y, m) => setCurrent({ year: y, month: m })}
+        year={filterMonth?.year ?? null}
+        month={filterMonth?.month ?? null}
+        onChange={(y, m) => setFilterMonth({ year: y, month: m })}
+        onClear={() => setFilterMonth(null)}
       />
 
       <div className="divider-ink mx-6" />
@@ -102,18 +103,35 @@ export default function BillsPage() {
             </div>
           </div>
         )}
-        {transactions.map(t => (
-          <RecordItem
-            key={t.id}
-            transaction={t}
-            eventName={eventMap.get(t.eventTypeId) ?? '未知'}
-            bankName={cardMap.get(t.bankCardId)?.bankName ?? '未知'}
-            bankCardNumber={cardMap.get(t.bankCardId)?.cardNumber ?? ''}
-            isOpen={swipedId === t.id}
-            onOpen={() => setSwipedId(t.id!)}
-            onDelete={() => deleteTransaction(t.id!)}
-          />
-        ))}
+        {(() => {
+          // Group by date, with subtle header between groups
+          let lastDate = ''
+          return transactions.map(t => {
+            const showHeader = t.date !== lastDate
+            lastDate = t.date
+            return (
+              <div key={t.id}>
+                {showHeader && (
+                  <div
+                    className="mx-4 mt-3 mb-1 font-serif tracking-wider"
+                    style={{ fontSize: '0.7rem', color: 'var(--color-ink-muted)', opacity: 0.5, letterSpacing: '0.1em' }}
+                  >
+                    {t.date}
+                  </div>
+                )}
+                <RecordItem
+                  transaction={t}
+                  eventName={eventMap.get(t.eventTypeId) ?? '未知'}
+                  bankName={cardMap.get(t.bankCardId)?.bankName ?? '未知'}
+                  bankCardNumber={cardMap.get(t.bankCardId)?.cardNumber ?? ''}
+                  isOpen={swipedId === t.id}
+                  onOpen={() => setSwipedId(t.id!)}
+                  onDelete={() => deleteTransaction(t.id!)}
+                />
+              </div>
+            )
+          })
+        })()}
       </div>
 
       {/* FAB */}
@@ -136,7 +154,7 @@ export default function BillsPage() {
           onClose={() => setShowAdd(false)}
           onSaved={(date) => {
             const [y, m] = date.split('-')
-            setCurrent({ year: parseInt(y), month: parseInt(m) })
+            setFilterMonth({ year: parseInt(y), month: parseInt(m) })
             setShowAdd(false)
           }}
         />
