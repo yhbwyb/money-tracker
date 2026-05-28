@@ -172,9 +172,8 @@ App (HashRouter)
      ├─ StatsPage
      │   ├─ MonthPicker
      │   ├─ Summary Cards
-     │   ├─ PieChart (Recharts)
-     │   ├─ BarChart (Recharts)
-     │   └─ Export Buttons
+     │   ├─ PieChart (Recharts, 图例)
+     │   └─ Export Buttons (当月Excel / 全部Excel)
      └─ SettingsPage
          ├─ Backup Card
          ├─ Bank Cards Card
@@ -197,7 +196,7 @@ App (HashRouter)
 | L2 | 翠绿提醒条 | 每 30 笔 |
 | L2 | 金色提醒条 | 7 天未备份 |
 | L3 | Excel 导出 | 手动按月 |
-| L3 | CSV 导出 | 手动按月 |
+| L3 | Excel 导出全部 | 手动全量 |
 | L3 | JSON 完整留底 | 手动全量 |
 | L3 | JSON 还原 | 手动导入 |
 
