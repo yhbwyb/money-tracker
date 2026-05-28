@@ -1,26 +1,9 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
-import { useBankCards } from '../hooks/useBankCards'
-import { useEventTypes } from '../hooks/useEventTypes'
+import { useLiveQuery } from 'dexie-react-hooks'
+import db from '../db'
 import { useTransactions } from '../hooks/useTransactions'
 import { getCurrentYearMonth, todayStr } from '../utils/format'
-
-const NOTE_HISTORY_KEY = 'noteHistory'
-const MAX_HISTORY = 20
-
-function getNoteHistory(): string[] {
-  try {
-    const raw = localStorage.getItem(NOTE_HISTORY_KEY)
-    return raw ? JSON.parse(raw) : []
-  } catch { return [] }
-}
-
-function saveNoteToHistory(note: string) {
-  const trimmed = note.trim()
-  if (!trimmed) return
-  const list = getNoteHistory().filter(n => n !== trimmed)
-  list.unshift(trimmed)
-  localStorage.setItem(NOTE_HISTORY_KEY, JSON.stringify(list.slice(0, MAX_HISTORY)))
-}
+import { getNoteHistory, saveNoteToHistory } from '../utils/noteHistory'
 
 interface Props {
   onClose: () => void
@@ -30,8 +13,8 @@ interface Props {
 export default function AddRecordSheet({ onClose, onSaved }: Props) {
   const { year, month } = getCurrentYearMonth()
   const { addTransaction } = useTransactions(year, month)
-  const { cards } = useBankCards()
-  const { types } = useEventTypes()
+  const cards = useLiveQuery(() => db.bankCards.toArray()) ?? []
+  const types = useLiveQuery(() => db.eventTypes.toArray()) ?? []
 
   const [date, setDate] = useState(todayStr())
   const [eventTypeId, setEventTypeId] = useState(0)

@@ -1,28 +1,12 @@
 import { formatMonth, getPrevMonth, getNextMonth } from '../utils/format'
 
 interface Props {
-  year: number | null
-  month: number | null
+  year: number
+  month: number
   onChange: (year: number, month: number) => void
-  onClear?: () => void
 }
 
-export default function MonthPicker({ year, month, onChange, onClear }: Props) {
-  if (year == null || month == null) {
-    return (
-      <div className="flex items-center justify-between px-6 py-4">
-        <div className="w-9" />
-        <span
-          className="font-serif font-bold tracking-wider"
-          style={{ fontSize: '1.15rem', letterSpacing: '0.15em' }}
-        >
-          全部记录
-        </span>
-        <div className="w-9" />
-      </div>
-    )
-  }
-
+export default function MonthPicker({ year, month, onChange }: Props) {
   const prev = getPrevMonth(year, month)
   const next = getNextMonth(year, month)
 
@@ -36,22 +20,12 @@ export default function MonthPicker({ year, month, onChange, onClear }: Props) {
         ←
       </button>
 
-      {onClear ? (
-        <button
-          onClick={onClear}
-          className="font-serif font-bold tracking-wider"
-          style={{ fontSize: '1.15rem', letterSpacing: '0.15em' }}
-        >
-          {formatMonth(year, month)}
-        </button>
-      ) : (
-        <span
-          className="font-serif font-bold tracking-wider"
-          style={{ fontSize: '1.15rem', letterSpacing: '0.15em' }}
-        >
-          {formatMonth(year, month)}
-        </span>
-      )}
+      <span
+        className="font-serif font-bold tracking-wider"
+        style={{ fontSize: '1.15rem', letterSpacing: '0.15em' }}
+      >
+        {formatMonth(year, month)}
+      </span>
 
       <button
         onClick={() => onChange(next.year, next.month)}

@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx'
 import { saveAs } from 'file-saver'
-import db from '../db'
+import db, { type Transaction, type BankCard } from '../db'
 import { getMonthRange, todayStr } from './format'
 
 interface ExportRow {
@@ -23,23 +23,43 @@ const COLS = [
   { wch: 20 }, // 备注
 ]
 
-function buildSheet(transactions: any[], eventMap: Map<number | undefined, string>, cardMap: Map<number | undefined, any>): XLSX.WorkSheet {
-  const rows: ExportRow[] = transactions.map(t => {
-    const card = cardMap.get(t.bankCardId)
-    return {
-      日期: t.date,
-      事件: eventMap.get(t.eventTypeId) ?? '',
-      银行卡: card?.bankName ?? '',
-      卡号: card?.cardNumber ?? '',
-      公私账: t.accountType === 'public' ? '公账' : '私账',
-      金额: t.amount,
-      备注: t.note,
-    }
-  })
+function formatRow(
+  t: Transaction,
+  eventMap: Map<number | undefined, string>,
+  cardMap: Map<number | undefined, BankCard>,
+): ExportRow {
+  const card = cardMap.get(t.bankCardId)
+  return {
+    日期: t.date,
+    事件: eventMap.get(t.eventTypeId) ?? '',
+    银行卡: card?.bankName ?? '',
+    卡号: card?.cardNumber ?? '',
+    公私账: t.accountType === 'public' ? '公账' : '私账',
+    金额: t.amount,
+    备注: t.note,
+  }
+}
 
+function buildSheet(
+  transactions: Transaction[],
+  eventMap: Map<number | undefined, string>,
+  cardMap: Map<number | undefined, BankCard>,
+): XLSX.WorkSheet {
+  const rows = transactions.map(t => formatRow(t, eventMap, cardMap))
   const ws = XLSX.utils.json_to_sheet(rows)
   ws['!cols'] = COLS
   return ws
+}
+
+async function lookupMaps() {
+  const [eventTypes, bankCards] = await Promise.all([
+    db.eventTypes.toArray(),
+    db.bankCards.toArray(),
+  ])
+  return {
+    eventMap: new Map(eventTypes.map(e => [e.id, e.name])),
+    cardMap: new Map(bankCards.map(c => [c.id, c])),
+  }
 }
 
 export async function exportExcel(year: number, month: number): Promise<void> {
@@ -49,11 +69,7 @@ export async function exportExcel(year: number, month: number): Promise<void> {
     .between(start, end, true, true)
     .toArray()
 
-  const eventTypes = await db.eventTypes.toArray()
-  const bankCards = await db.bankCards.toArray()
-  const eventMap = new Map(eventTypes.map(e => [e.id, e.name]))
-  const cardMap = new Map(bankCards.map(c => [c.id, c]))
-
+  const { eventMap, cardMap } = await lookupMaps()
   const ws = buildSheet(transactions, eventMap, cardMap)
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, '当月账单')
@@ -62,16 +78,12 @@ export async function exportExcel(year: number, month: number): Promise<void> {
 }
 
 export async function exportAllExcel(): Promise<void> {
-  const [transactions, eventTypes, bankCards] = await Promise.all([
+  const [transactions, maps] = await Promise.all([
     db.transactions.orderBy('date').toArray(),
-    db.eventTypes.toArray(),
-    db.bankCards.toArray(),
+    lookupMaps(),
   ])
 
-  const eventMap = new Map(eventTypes.map(e => [e.id, e.name]))
-  const cardMap = new Map(bankCards.map(c => [c.id, c]))
-
-  const ws = buildSheet(transactions, eventMap, cardMap)
+  const ws = buildSheet(transactions, maps.eventMap, maps.cardMap)
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, '全部账单')
   const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
@@ -85,23 +97,13 @@ export async function exportCSV(year: number, month: number): Promise<void> {
     .between(start, end, true, true)
     .toArray()
 
-  const eventTypes = await db.eventTypes.toArray()
-  const bankCards = await db.bankCards.toArray()
-  const eventMap = new Map(eventTypes.map(e => [e.id, e.name]))
-  const cardMap = new Map(bankCards.map(c => [c.id, c]))
+  const { eventMap, cardMap } = await lookupMaps()
 
   const headers = ['日期', '事件', '银行卡', '卡号', '公私账', '金额', '备注']
   const rows = transactions.map(t => {
-    const card = cardMap.get(t.bankCardId)
-    return [
-      t.date,
-      eventMap.get(t.eventTypeId) ?? '',
-      card?.bankName ?? '',
-      card?.cardNumber ?? '',
-      t.accountType === 'public' ? '公账' : '私账',
-      String(t.amount),
-      t.note,
-    ].map(v => `"${v}"`).join(',')
+    const r = formatRow(t, eventMap, cardMap)
+    return [r.日期, r.事件, r.银行卡, r.卡号, r.公私账, String(r.金额), r.备注]
+      .map(v => `"${v}"`).join(',')
   })
 
   const csv = [headers.join(','), ...rows].join('\n')

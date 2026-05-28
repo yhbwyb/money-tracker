@@ -32,7 +32,7 @@ const db = new Dexie('MoneyTrackerDB') as Dexie & {
 db.version(1).stores({
   bankCards: '++id',
   eventTypes: '++id',
-  transactions: '++id, date, eventTypeId, bankCardId, accountType, createdAt',
+  transactions: '++id, date, eventTypeId, bankCardId, accountType',
 })
 
 db.version(2).stores({

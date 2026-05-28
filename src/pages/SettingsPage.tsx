@@ -1,14 +1,13 @@
 import { useState, useRef } from 'react'
-import { useBankCards } from '../hooks/useBankCards'
-import { useEventTypes } from '../hooks/useEventTypes'
+import { useLiveQuery } from 'dexie-react-hooks'
 import { useBackup } from '../hooks/useBackup'
 import { exportFullJSON } from '../utils/export'
 import { importFullJSON } from '../utils/import'
 import db from '../db'
 
 export default function SettingsPage() {
-  const { cards, addCard, deleteCard } = useBankCards()
-  const { types, addType, deleteType } = useEventTypes()
+  const cards = useLiveQuery(() => db.bankCards.toArray()) ?? []
+  const types = useLiveQuery(() => db.eventTypes.toArray()) ?? []
   const { daysSinceLastBackup, markBackupDone } = useBackup()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -26,7 +25,7 @@ export default function SettingsPage() {
       ? `该银行卡有 ${count} 条关联记录，删除后相关记录将显示为"未知"。确定删除？`
       : '确定删除该银行卡？'
     if (confirm(msg)) {
-      await deleteCard(id)
+      await db.bankCards.delete(id)
     }
   }
 
@@ -36,13 +35,13 @@ export default function SettingsPage() {
       ? `该事由有 ${count} 条关联记录，删除后相关记录将显示为"未知"。确定删除？`
       : '确定删除该事由？'
     if (confirm(msg)) {
-      await deleteType(id)
+      await db.eventTypes.delete(id)
     }
   }
 
   async function handleAddCard() {
     if (!cardNumber.trim() || !bankName.trim()) return
-    await addCard(cardNumber.trim(), bankName.trim(), accountType)
+    await db.bankCards.add({ cardNumber: cardNumber.trim(), bankName: bankName.trim(), accountType })
     setCardNumber('')
     setBankName('')
     setShowCardForm(false)
@@ -50,7 +49,7 @@ export default function SettingsPage() {
 
   async function handleAddType() {
     if (!newTypeName.trim()) return
-    await addType(newTypeName.trim())
+    await db.eventTypes.add({ name: newTypeName.trim() })
     setNewTypeName('')
   }
 

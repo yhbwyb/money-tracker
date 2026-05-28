@@ -1,21 +1,22 @@
 import { useState, useMemo } from 'react'
+import { useLiveQuery } from 'dexie-react-hooks'
 import MonthPicker from '../components/MonthPicker'
 import RecordItem from '../components/RecordItem'
 import BackupBanner from '../components/BackupBanner'
 import AddRecordSheet from '../components/AddRecordSheet'
+import db from '../db'
 import { useTransactions } from '../hooks/useTransactions'
-import { useBankCards } from '../hooks/useBankCards'
-import { useEventTypes } from '../hooks/useEventTypes'
 import { useBackup } from '../hooks/useBackup'
 import { getCurrentYearMonth, formatAmount } from '../utils/format'
+import { computeTotals } from '../utils/totals'
 
 export default function BillsPage() {
   const [filterMonth, setFilterMonth] = useState(getCurrentYearMonth)
   const [showAdd, setShowAdd] = useState(false)
   const [swipedId, setSwipedId] = useState<number | null>(null)
-  const { transactions, deleteTransaction } = useTransactions(filterMonth?.year, filterMonth?.month)
-  const { cards } = useBankCards()
-  const { types } = useEventTypes()
+  const { transactions, deleteTransaction } = useTransactions(filterMonth.year, filterMonth.month)
+  const cards = useLiveQuery(() => db.bankCards.toArray()) ?? []
+  const types = useLiveQuery(() => db.eventTypes.toArray()) ?? []
   const { shouldRemindBackup, shouldRemindByCount, dismissCountReminder } = useBackup()
 
   const showCountReminder = shouldRemindByCount()
@@ -29,12 +30,8 @@ export default function BillsPage() {
     [cards],
   )
 
-  const publicTotal = useMemo(
-    () => transactions.filter(t => t.accountType === 'public').reduce((s, t) => s + t.amount, 0),
-    [transactions],
-  )
-  const privateTotal = useMemo(
-    () => transactions.filter(t => t.accountType === 'private').reduce((s, t) => s + t.amount, 0),
+  const { publicTotal, privateTotal } = useMemo(
+    () => computeTotals(transactions),
     [transactions],
   )
 

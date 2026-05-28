@@ -20,9 +20,6 @@ const httpsOptions = (() => {
 
 export default defineConfig({
   base: BASE,
-  define: {
-    __BUILD_TIME__: JSON.stringify(new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false })),
-  },
   server: { https: httpsOptions, host: true },
   preview: { https: httpsOptions, host: true },
   plugins: [

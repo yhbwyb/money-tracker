@@ -36,7 +36,7 @@
 | `--font-serif` | Noto Serif SC, SimSun, STSong, serif | 标题、金额、印章标签 |
 | `--font-sans` | Noto Sans SC, PingFang SC, Microsoft YaHei | 正文 |
 
-Google Fonts 加载于 `index.html`：Noto Serif SC (400/600/700)、Noto Sans SC (300/400/500)。
+字体使用系统原生字体栈，无需加载外部字体资源。
 
 ### CSS 工具类
 
@@ -50,6 +50,7 @@ Google Fonts 加载于 `index.html`：Noto Serif SC (400/600/700)、Noto Sans SC
 | `.divider-ink` | 渐变分割线 |
 | `.input-ink` | 纸色底输入框，聚焦墨色边框 |
 | `.month-btn` | 月份切换箭头 |
+| `.safe-area-top` | iPhone 顶部安全区适配（刘海/灵动岛） |
 | `.safe-area-bottom` | iPhone 底部安全区适配 |
 
 ### 噪点纹理
@@ -80,11 +81,9 @@ Google Fonts 加载于 `index.html`：Noto Serif SC (400/600/700)、Noto Sans SC
 
 **汇总卡片**：三栏（公账 / 私账 / 合计），朱红 / 墨色 / 墨色。
 
-**饼图**（环形）：按事由分布，墨色系调色板 `['#2c2416','#c43a31','#b8954a','#5b8c5a','#8b6914','#4a6b8c','#7a5a4a','#3a6b5e']`。仅显示有数据的类型。
+**饼图**（环形）：按事由分布，墨色系调色板。环内无标签，下方显示颜色圆点图例（事由名称 + 百分比）。仅显示有数据的类型。
 
-**柱状图**：按日流水趋势，墨色柱，X 轴日期 Y 轴金额。
-
-**导出按钮**：导出 Excel（主按钮）/ 导出 CSV（次按钮），导出后自动标记已备份。
+**导出按钮**：导出当月（Excel）/ 导出全部（Excel），导出后自动标记已备份。
 
 **上次留底提示**：天数显示于顶部。
 
@@ -111,7 +110,7 @@ Google Fonts 加载于 `index.html`：Noto Serif SC (400/600/700)、Noto Sans SC
 
 **关闭**：点击遮罩背景、或下拉拖拽条超过 100px。
 
-**表单流程**：日期（date input，默认当天）→ 事由（chip 选一）→ 银票（select 下拉）→ 公/私账自动显示 → 金额（数字输入，大号居中）→ 附注（选填）→ 入账按钮。
+**表单流程**：日期（date input，默认当天）→ 事由（chip 选一）→ 银票（select 下拉）→ 公/私账自动显示 → 金额（数字输入，大号居中）→ 附注（输入框 + 历史备注 chip 快捷选择，最多保留 20 条）→ 入账按钮。记入非当月日期时，保存后自动切换月份视图。
 
 **数据加载同步**：useEffect 监听 cards/types 变化，数据加载完成后自动选中第一项（解决 IndexedDB 异步加载导致的 ID=0 bug）。
 
@@ -121,7 +120,7 @@ Google Fonts 加载于 `index.html`：Noto Serif SC (400/600/700)、Noto Sans SC
 
 ## 数据模型
 
-Dexie.js 封装 IndexedDB，数据库名 `MoneyTrackerDB`，版本 1。
+Dexie.js 封装 IndexedDB，数据库名 `MoneyTrackerDB`，版本 2。v1 建立基础表和索引，v2 增加 `createdAt` 索引以支持全表日期排序查询。
 
 ### bankCards
 
@@ -154,7 +153,7 @@ Dexie.js 封装 IndexedDB，数据库名 `MoneyTrackerDB`，版本 1。
 }
 ```
 
-主键自增。复合索引：`date, eventTypeId, bankCardId, accountType`。
+主键自增。索引：`date, eventTypeId, bankCardId, accountType, createdAt`。
 
 ---
 
@@ -282,6 +281,6 @@ npx vite --host   # 手机连同一 Wi-Fi，访问显示的 Network 地址
 ## 已知限制
 
 - 不支持编辑已记账记录（需删除重记）
-- 不支持跨月统计（仅单月视图）
+- 统计页仅支持单月视图，导出全部数据功能可导出全量记录
 - Service Worker 缓存策略为基础 precache，未实现运行时缓存
 - 大 chunk 警告（recharts + xlsx 体积约 1MB），使用时可考虑代码分割

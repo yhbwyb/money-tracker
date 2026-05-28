@@ -1,11 +1,13 @@
 import { useState, useMemo } from 'react'
+import { useLiveQuery } from 'dexie-react-hooks'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import MonthPicker from '../components/MonthPicker'
+import db from '../db'
 import { useTransactions } from '../hooks/useTransactions'
-import { useEventTypes } from '../hooks/useEventTypes'
 import { useBackup } from '../hooks/useBackup'
 import { exportExcel, exportAllExcel } from '../utils/export'
 import { getCurrentYearMonth, formatAmount } from '../utils/format'
+import { computeTotals } from '../utils/totals'
 
 const COLORS = [
   '#2c2416', '#c43a31', '#b8954a', '#5b8c5a',
@@ -15,18 +17,13 @@ const COLORS = [
 export default function StatsPage() {
   const [current, setCurrent] = useState(getCurrentYearMonth)
   const { transactions } = useTransactions(current.year, current.month)
-  const { types } = useEventTypes()
+  const types = useLiveQuery(() => db.eventTypes.toArray()) ?? []
   const { daysSinceLastBackup, markBackupDone } = useBackup()
 
-  const publicTotal = useMemo(
-    () => transactions.filter(t => t.accountType === 'public').reduce((s, t) => s + t.amount, 0),
+  const { publicTotal, privateTotal, total } = useMemo(
+    () => computeTotals(transactions),
     [transactions],
   )
-  const privateTotal = useMemo(
-    () => transactions.filter(t => t.accountType === 'private').reduce((s, t) => s + t.amount, 0),
-    [transactions],
-  )
-  const total = publicTotal + privateTotal
 
   const eventData = useMemo(
     () => types.map(t => {
