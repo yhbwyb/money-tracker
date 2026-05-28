@@ -7,7 +7,7 @@ export function formatAmount(amount: number): string {
 
 export function formatDate(dateStr: string): string {
   const d = new Date(dateStr)
-  return `${d.getMonth() + 1}月${d.getDate()}日`
+  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`
 }
 
 export function formatMonth(year: number, month: number): string {

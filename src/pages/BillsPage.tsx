@@ -141,35 +141,18 @@ export default function BillsPage() {
             </div>
           </div>
         )}
-        {(() => {
-          // Group by date, with subtle header between groups
-          let lastDate = ''
-          return transactions.map(t => {
-            const showHeader = t.date !== lastDate
-            lastDate = t.date
-            return (
-              <div key={t.id}>
-                {showHeader && (
-                  <div
-                    className="mx-4 mt-3 mb-1 font-serif tracking-wider"
-                    style={{ fontSize: '0.7rem', color: 'var(--color-ink-muted)', opacity: 0.5, letterSpacing: '0.1em' }}
-                  >
-                    {t.date}
-                  </div>
-                )}
-                <RecordItem
-                  transaction={t}
-                  eventName={eventMap.get(t.eventTypeId) ?? '未知'}
-                  bankName={cardMap.get(t.bankCardId)?.bankName ?? '未知'}
-                  bankCardNumber={cardMap.get(t.bankCardId)?.cardNumber ?? ''}
-                  isOpen={swipedId === t.id}
-                  onOpen={() => setSwipedId(t.id!)}
-                  onDelete={() => deleteTransaction(t.id!)}
-                />
-              </div>
-            )
-          })
-        })()}
+        {transactions.map(t => (
+          <RecordItem
+            key={t.id}
+            transaction={t}
+            eventName={eventMap.get(t.eventTypeId) ?? '未知'}
+            bankName={cardMap.get(t.bankCardId)?.bankName ?? '未知'}
+            bankCardNumber={cardMap.get(t.bankCardId)?.cardNumber ?? ''}
+            isOpen={swipedId === t.id}
+            onOpen={() => setSwipedId(t.id!)}
+            onDelete={() => deleteTransaction(t.id!)}
+          />
+        ))}
       </div>
 
       {/* FAB */}
