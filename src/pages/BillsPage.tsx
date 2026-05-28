@@ -14,7 +14,9 @@ export default function BillsPage() {
   const [filterMonth, setFilterMonth] = useState(getCurrentYearMonth)
   const [showAdd, setShowAdd] = useState(false)
   const [swipedId, setSwipedId] = useState<number | null>(null)
-  const { transactions, deleteTransaction } = useTransactions(filterMonth.year, filterMonth.month)
+  const [search, setSearch] = useState('')
+  const { transactions: monthTxns, deleteTransaction } = useTransactions(filterMonth.year, filterMonth.month)
+  const allTxns = useLiveQuery(() => db.transactions.orderBy('createdAt').reverse().toArray()) ?? []
   const cards = useLiveQuery(() => db.bankCards.toArray()) ?? []
   const types = useLiveQuery(() => db.eventTypes.toArray()) ?? []
   const { shouldRemindBackup, shouldRemindByCount, dismissCountReminder } = useBackup()
@@ -30,6 +32,22 @@ export default function BillsPage() {
     [cards],
   )
 
+  const isSearching = search.trim().length > 0
+
+  const transactions = useMemo(() => {
+    if (!isSearching) return monthTxns
+    const q = search.trim().toLowerCase()
+    return allTxns.filter(t => {
+      if (t.note.toLowerCase().includes(q)) return true
+      if (String(t.amount).includes(q)) return true
+      const bankName = cardMap.get(t.bankCardId)?.bankName ?? ''
+      if (bankName.toLowerCase().includes(q)) return true
+      const eventName = eventMap.get(t.eventTypeId) ?? ''
+      if (eventName.toLowerCase().includes(q)) return true
+      return false
+    })
+  }, [isSearching, search, monthTxns, allTxns, cardMap, eventMap])
+
   const { publicTotal, privateTotal } = useMemo(
     () => computeTotals(transactions),
     [transactions],
@@ -44,6 +62,28 @@ export default function BillsPage() {
         month={filterMonth.month}
         onChange={(y, m) => setFilterMonth({ year: y, month: m })}
       />
+
+      <div className="px-4 pb-1">
+        <div className="relative">
+          <input
+            type="search"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="搜索备注、金额、银行、事由…"
+            className="input-ink w-full pr-8"
+            style={{ fontSize: '0.85rem', paddingTop: '0.5rem', paddingBottom: '0.5rem' }}
+          />
+          {search && (
+            <button
+              onClick={() => setSearch('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-sm"
+              style={{ color: 'var(--color-ink-muted)', opacity: 0.5 }}
+            >
+              ✕
+            </button>
+          )}
+        </div>
+      </div>
 
       <div className="divider-ink mx-6" />
 
@@ -93,9 +133,11 @@ export default function BillsPage() {
       <div className="pb-24">
         {transactions.length === 0 && (
           <div className="text-center py-20" style={{ color: 'var(--color-ink-muted)' }}>
-            <div className="font-serif mb-2" style={{ fontSize: '2.5rem', opacity: 0.2 }}>簿</div>
+            <div className="font-serif mb-2" style={{ fontSize: '2.5rem', opacity: 0.2 }}>
+              {isSearching ? '寻' : '簿'}
+            </div>
             <div style={{ fontSize: '0.8rem', opacity: 0.45, letterSpacing: '0.08em' }}>
-              尚无记录 · 点右下朱印记一笔
+              {isSearching ? '未找到匹配记录' : '尚无记录 · 点右下朱印记一笔'}
             </div>
           </div>
         )}
