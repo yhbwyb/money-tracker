@@ -1,8 +1,8 @@
-# 会话进度 · 2026-05-28
+# 会话进度 · 2026-05-29
 
 ## 当前版本
 
-V2.2.0
+V2.3.0
 
 ## 已完成
 
@@ -13,8 +13,10 @@ V2.2.0
 - [x] 印鉴页：银行卡/事由管理 + JSON 备份还原 + 版本号
 - [x] PWA：iOS 全屏安装 + 离线可用 + 安全区适配
 - [x] 记录日期显示完整年月日，去掉日期分组标题
+- [x] 左滑删除修复：删除按钮 touch 事件冒泡导致无法真删除
+- [x] 编辑已记账记录：点击卡片弹出编辑表单，预填原有数据，修改后保存
 
-### 架构（2026-05-28 重构）
+### 架构
 - [x] DB schema：v1 原始 + v2 增加 createdAt 索引
 - [x] 移除 useTransactions 死代码 + MonthPicker onClear
 - [x] 备注历史提取到 `src/utils/noteHistory.ts`
@@ -23,6 +25,8 @@ V2.2.0
 - [x] `computeTotals` 提取到 `src/utils/totals.ts`
 - [x] 移除 `useBankCards`/`useEventTypes` 透传 hook
 - [x] 15 文件 → 14 文件，净删 63 行
+- [x] AddRecordSheet 支持编辑模式：可复用组件，通过 transaction prop 切换新增/编辑
+- [x] useTransactions 新增 updateTransaction 方法
 
 ### 文档
 - [x] CONTEXT.md 同步到最新
@@ -34,7 +38,6 @@ V2.2.0
 ## 下一步可做
 
 - 朋友测试反馈后修 bug
-- 编辑已记账记录
 - 快捷模板（高频记账模式一键填入）
 - 年度汇总统计
 

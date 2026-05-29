@@ -19,6 +19,9 @@ export function useTransactions(year: number, month: number) {
     addTransaction: async (data: Omit<Transaction, 'id' | 'createdAt'>) => {
       await db.transactions.add({ ...data, createdAt: Date.now() })
     },
+    updateTransaction: async (id: number, data: Partial<Omit<Transaction, 'id' | 'createdAt'>>) => {
+      await db.transactions.update(id, data)
+    },
     deleteTransaction: async (id: number) => {
       await db.transactions.delete(id)
     },

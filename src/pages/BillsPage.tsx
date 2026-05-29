@@ -4,7 +4,7 @@ import MonthPicker from '../components/MonthPicker'
 import RecordItem from '../components/RecordItem'
 import BackupBanner from '../components/BackupBanner'
 import AddRecordSheet from '../components/AddRecordSheet'
-import db from '../db'
+import db, { type Transaction } from '../db'
 import { useTransactions } from '../hooks/useTransactions'
 import { useBackup } from '../hooks/useBackup'
 import { getCurrentYearMonth, formatAmount } from '../utils/format'
@@ -13,6 +13,7 @@ import { computeTotals } from '../utils/totals'
 export default function BillsPage() {
   const [filterMonth, setFilterMonth] = useState(getCurrentYearMonth)
   const [showAdd, setShowAdd] = useState(false)
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
   const [swipedId, setSwipedId] = useState<number | null>(null)
   const [search, setSearch] = useState('')
   const { transactions: monthTxns, deleteTransaction } = useTransactions(filterMonth.year, filterMonth.month)
@@ -150,14 +151,16 @@ export default function BillsPage() {
             bankCardNumber={cardMap.get(t.bankCardId)?.cardNumber ?? ''}
             isOpen={swipedId === t.id}
             onOpen={() => setSwipedId(t.id!)}
+            onClose={() => setSwipedId(null)}
             onDelete={() => deleteTransaction(t.id!)}
+            onEdit={() => setEditingTransaction(t)}
           />
         ))}
       </div>
 
       {/* FAB */}
       <button
-        onClick={() => setShowAdd(true)}
+        onClick={() => { setShowAdd(true); setEditingTransaction(null) }}
         className="fab-ink fixed bottom-28 right-5 w-14 h-14 rounded-2xl flex items-center justify-center z-30"
         style={{
           fontFamily: 'var(--font-serif)',
@@ -170,14 +173,16 @@ export default function BillsPage() {
         记
       </button>
 
-      {showAdd && (
+      {(showAdd || editingTransaction !== null) && (
         <AddRecordSheet
-          onClose={() => setShowAdd(false)}
+          onClose={() => { setShowAdd(false); setEditingTransaction(null) }}
           onSaved={(date) => {
             const [y, m] = date.split('-')
             setFilterMonth({ year: parseInt(y), month: parseInt(m) })
             setShowAdd(false)
+            setEditingTransaction(null)
           }}
+          transaction={editingTransaction || undefined}
         />
       )}
     </div>

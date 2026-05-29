@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import db from '../db'
+import db, { type Transaction } from '../db'
 import { useTransactions } from '../hooks/useTransactions'
 import { getCurrentYearMonth, todayStr } from '../utils/format'
 import { getNoteHistory, saveNoteToHistory } from '../utils/noteHistory'
@@ -8,19 +8,21 @@ import { getNoteHistory, saveNoteToHistory } from '../utils/noteHistory'
 interface Props {
   onClose: () => void
   onSaved: (date: string) => void
+  transaction?: Transaction | null
 }
 
-export default function AddRecordSheet({ onClose, onSaved }: Props) {
+export default function AddRecordSheet({ onClose, onSaved, transaction }: Props) {
+  const editMode = !!transaction
   const { year, month } = getCurrentYearMonth()
-  const { addTransaction } = useTransactions(year, month)
+  const { addTransaction, updateTransaction } = useTransactions(year, month)
   const cards = useLiveQuery(() => db.bankCards.toArray()) ?? []
   const types = useLiveQuery(() => db.eventTypes.toArray()) ?? []
 
-  const [date, setDate] = useState(todayStr())
-  const [eventTypeId, setEventTypeId] = useState(0)
-  const [bankCardId, setBankCardId] = useState(0)
-  const [amount, setAmount] = useState('')
-  const [note, setNote] = useState('')
+  const [date, setDate] = useState(transaction?.date ?? todayStr())
+  const [eventTypeId, setEventTypeId] = useState(transaction?.eventTypeId ?? 0)
+  const [bankCardId, setBankCardId] = useState(transaction?.bankCardId ?? 0)
+  const [amount, setAmount] = useState(transaction ? String(transaction.amount) : '')
+  const [note, setNote] = useState(transaction?.note ?? '')
   const [noteHistory, setNoteHistory] = useState<string[]>(getNoteHistory)
   const [submitting, setSubmitting] = useState(false)
 
@@ -52,18 +54,20 @@ export default function AddRecordSheet({ onClose, onSaved }: Props) {
     }
   }
 
-  // Sync selections when data loads
+  // Sync selections when data loads (add mode only)
   useEffect(() => {
+    if (editMode) return
     if (types.length > 0 && eventTypeId === 0) {
       setEventTypeId(types[0].id!)
     }
-  }, [types, eventTypeId])
+  }, [types, eventTypeId, editMode])
 
   useEffect(() => {
+    if (editMode) return
     if (cards.length > 0 && bankCardId === 0) {
       setBankCardId(cards[0].id!)
     }
-  }, [cards, bankCardId])
+  }, [cards, bankCardId, editMode])
 
   const selectedCard = cards.find(c => c.id === bankCardId)
 
@@ -91,14 +95,22 @@ export default function AddRecordSheet({ onClose, onSaved }: Props) {
     setSubmitting(true)
     saveNoteToHistory(note)
     setNoteHistory(getNoteHistory())
-    await addTransaction({
+
+    const data = {
       date,
       eventTypeId,
       bankCardId,
       accountType: selectedCard?.accountType ?? 'private',
       amount: amt,
       note,
-    })
+    }
+
+    if (editMode) {
+      await updateTransaction(transaction!.id!, data)
+    } else {
+      await addTransaction(data)
+    }
+
     setTimeout(() => {
       setSubmitting(false)
       onSaved(date)
@@ -149,7 +161,7 @@ export default function AddRecordSheet({ onClose, onSaved }: Props) {
           className="text-center font-serif font-bold mb-6 tracking-widest"
           style={{ fontSize: '1.25rem', letterSpacing: '0.25em' }}
         >
-          记一笔
+          {editMode ? '改一笔' : '记一笔'}
         </h2>
 
         {/* Date */}
@@ -281,7 +293,7 @@ export default function AddRecordSheet({ onClose, onSaved }: Props) {
                      disabled:opacity-50 disabled:scale-100"
           style={{ letterSpacing: '0.3em' }}
         >
-          {submitting ? '…' : '入 账'}
+          {submitting ? '…' : editMode ? '改 账' : '入 账'}
         </button>
 
         <div className="h-4" />

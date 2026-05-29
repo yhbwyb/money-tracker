@@ -9,7 +9,9 @@ interface Props {
   bankCardNumber: string
   isOpen: boolean
   onOpen: () => void
+  onClose: () => void
   onDelete: () => void
+  onEdit: () => void
 }
 
 export default function RecordItem({
@@ -19,9 +21,12 @@ export default function RecordItem({
   bankCardNumber,
   isOpen,
   onOpen,
+  onClose,
   onDelete,
+  onEdit,
 }: Props) {
   const touchStart = useRef({ x: 0, y: 0 })
+  const swipeHandled = useRef(false)
   const [offsetX, setOffsetX] = useState(0)
 
   // Sync offsetX with parent's isOpen state
@@ -31,6 +36,7 @@ export default function RecordItem({
 
   function handleTouchStart(e: React.TouchEvent) {
     touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
+    swipeHandled.current = false
   }
 
   function handleTouchMove(e: React.TouchEvent) {
@@ -40,6 +46,7 @@ export default function RecordItem({
     if (dy > Math.abs(dx) * 0.6) return
     if (dx < 0) {
       setOffsetX(Math.max(dx, -80))
+      swipeHandled.current = true
     }
   }
 
@@ -49,11 +56,19 @@ export default function RecordItem({
       onOpen()
     } else {
       setOffsetX(0)
+      onClose()
     }
   }
 
-  function handleDeleteClick(e: React.MouseEvent) {
+  function handleCardClick() {
+    if (!swipeHandled.current && offsetX === 0) {
+      onEdit()
+    }
+  }
+
+  function handleDeleteAction(e: React.MouseEvent) {
     e.stopPropagation()
+    e.preventDefault()
     if (confirm('确定删除该记录？')) {
       onDelete()
     }
@@ -68,7 +83,9 @@ export default function RecordItem({
           width: '80px',
           backgroundColor: 'var(--color-vermillion)',
         }}
-        onClick={handleDeleteClick}
+        onClick={handleDeleteAction}
+        onTouchStart={e => e.stopPropagation()}
+        onTouchEnd={e => e.stopPropagation()}
       >
         <span className="text-white font-serif font-bold tracking-wider text-sm">删除</span>
       </div>
@@ -83,6 +100,7 @@ export default function RecordItem({
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        onClick={handleCardClick}
       >
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1.5">
