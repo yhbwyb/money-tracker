@@ -65,17 +65,21 @@
 
 **月份切换**：左右箭头切换，显示 `YYYY年M月` 格式。
 
-**汇总卡片**：公账合计（朱红）/ 私账合计（墨色），各占半栏。
+**汇总卡片**：公账合计（朱红）/ 私账合计（墨色），各占半栏，点击切换筛选。
 
-**记录列表**：每条显示完整日期（YYYY年M月D日）→ 公/私印章 → 事由名称 → 银行·卡号 → 金额 → 备注。无日期分组标题，紧凑排列。
+**公账/私账筛选**：点击概要框切换筛选（高亮描边），另一框变暗。点击已选中框还原显示全部。筛选后仅显示对应账类记录，汇总金额同步更新。
 
-**左滑删除**：手指向左滑动 > 40px 露出朱红「删除」区域，点击确认后删除。滑开后点击页面任意位置收回。同一时间只有一条记录处于滑开状态（由 `swipedId` 状态管理）。
+**记录列表**：每条显示完整日期（YYYY年M月D日）→ 公/私印章 → 事由名称 → 银行·卡号 → 客户名 → 备注 → 金额。无日期分组标题，紧凑排列。
+
+**点击编辑**：点击卡片（非滑动）弹出编辑表单（标题「改一笔」），预填原有数据，修改后点「改 账」保存。日期变更时自动跳转对应月份。
+
+**左滑删除**：手指向左滑动 > 40px 露出朱红「删除」区域，点击确认后删除。删除按钮 touch 事件阻止冒泡，确保点击生效。同一时间只有一条记录处于滑开状态（由 `swipedId` 状态管理）。
 
 **备份提醒条**：
 - 7 天未备份 → 金色条「久未备份，请前往『账目』页导出」
 - 每记 30 笔 → 翠绿条「已记 30+ 笔，建议前往『印鉴』留底备份」，可点 ✕ 关闭
 
-**搜索栏**：月份选择器下方常驻搜索框，输入关键字跨全部历史记录搜索，匹配备注、金额、银行名、事由名。清空搜索恢复当月视图。搜索时汇总卡片同步更新。
+**搜索栏**：月份选择器下方常驻搜索框，输入关键字跨全部历史记录搜索，匹配客户、备注、金额、银行名、事由名。清空搜索恢复当月视图。搜索时汇总卡片同步更新。
 
 **FAB 按钮**：右下角朱红方块「记」，`fixed bottom-28 right-5`，z-index 30。
 
@@ -85,7 +89,7 @@
 
 **饼图**（环形）：按事由分布，墨色系调色板。环内无标签，下方显示颜色圆点图例（事由名称 + 百分比）。仅显示有数据的类型。
 
-**导出按钮**：导出当月（Excel）/ 导出全部（Excel），导出后自动标记已备份。
+**导出按钮**：导出当月（Excel）/ 导出全部（Excel），导出后自动标记已备份。导出列：日期、事件、银行卡、卡号、公私账、金额、客户、备注。
 
 **上次留底提示**：天数显示于顶部。
 
@@ -110,11 +114,15 @@
 
 ### 记账弹窗 (`AddRecordSheet`)
 
-**打开**：点击流水页 FAB。
+**打开**：点击流水页 FAB（新增模式，标题「记一笔」）或点击记录卡片（编辑模式，标题「改一笔」）。
 
 **关闭**：点击遮罩背景、或下拉拖拽条超过 100px。
 
-**表单流程**：日期（date input，默认当天）→ 事由（chip 选一）→ 银票（select 下拉）→ 公/私账自动显示 → 金额（数字输入，大号居中）→ 附注（输入框 + 历史备注 chip 快捷选择，最多保留 20 条）→ 入账按钮。记入非当月日期时，保存后自动切换月份视图。
+**表单流程**：日期（date input，默认当天）→ 事由（chip 选一）→ 银票（select 下拉）→ 公/私账自动显示 → 金额（数字输入，大号居中）→ 客户（输入框 + 历史客户 chip 快捷选择，选填，最多保留 20 条）→ 附注（输入框 + 历史备注 chip 快捷选择，最多保留 20 条）→ 入账/改账按钮。
+
+**编辑模式**：通过 `transaction` prop 传入记录数据，表单预填所有字段。自动选中（useEffect）逻辑在编辑模式下跳过。提交时调用 `updateTransaction` 而非 `addTransaction`。
+
+**紧凑布局**：减小各字段间距（mb-3）、标题字号、金额字号和输入框内边距，确保新增的客户字段不超出单屏。
 
 **数据加载同步**：useEffect 监听 cards/types 变化，数据加载完成后自动选中第一项（解决 IndexedDB 异步加载导致的 ID=0 bug）。
 
@@ -152,12 +160,13 @@ Dexie.js 封装 IndexedDB，数据库名 `MoneyTrackerDB`，版本 2。v1 建立
   bankCardId: number
   accountType: 'public' | 'private'  // 从银行卡自动带入
   amount: number
+  customer: string      // 选填，localStorage 记忆最近 20 条
   note: string
   createdAt: number     // Date.now()
 }
 ```
 
-主键自增。索引：`date, eventTypeId, bankCardId, accountType, createdAt`。
+主键自增。索引：`date, eventTypeId, bankCardId, accountType, createdAt`。`customer` 无需索引。
 
 ---
 
@@ -168,18 +177,19 @@ App (HashRouter)
  └─ Layout (底部导航 + Outlet)
      ├─ BillsPage
      │   ├─ MonthPicker
+     │   ├─ Search Bar
      │   ├─ BackupBanner (条件渲染)
-     │   ├─ Summary Cards
-     │   ├─ RecordItem[] (左滑删除)
-     │   ├─ FAB (触发弹窗)
-     │   └─ AddRecordSheet (条件渲染)
+     │   ├─ Summary Cards (可点击筛选公/私账)
+     │   ├─ RecordItem[] (点击编辑 + 左滑删除)
+     │   ├─ FAB (触发新增弹窗)
+     │   └─ AddRecordSheet (新增/编辑双模式)
      ├─ StatsPage
      │   ├─ MonthPicker
      │   ├─ Summary Cards
      │   ├─ PieChart (Recharts, 图例)
      │   └─ Export Buttons (当月Excel / 全部Excel)
      └─ SettingsPage
-         ├─ Backup Card
+         ├─ Backup Card (JSON 导出/还原)
          ├─ Bank Cards Card
          └─ Event Types Card
 ```
@@ -254,14 +264,11 @@ git config --global https.proxy http://127.0.0.1:7897
 ```bash
 cd d:/cc-project/money-tracker
 npm install
-npm run dev       # http://localhost:5173
+npm run dev       # 默认 HTTP 开发服务器，端口自动分配
 npm run build     # → dist/
 ```
 
-手机局域网测试：
-```bash
-npx vite --host   # 手机连同一 Wi-Fi，访问显示的 Network 地址
-```
+手机局域网测试：`npm run dev` 默认 `--host`，手机连同一 Wi-Fi 访问 Network 地址即可。
 
 ---
 
@@ -279,11 +286,18 @@ npx vite --host   # 手机连同一 Wi-Fi，访问显示的 Network 地址
 
 6. **弹窗下滑关闭** — 使用独立拖拽把手（`touch-none` + touch event handlers），遮罩层设 `touchAction: none` 防穿透。
 
+7. **记账弹窗双模式复用** — `AddRecordSheet` 通过 `transaction` prop 区分新增/编辑模式，避免创建两个几乎相同的组件。表单预填、按钮文案、提交接口均根据模式切换。
+
+8. **客户/备注历史分离** — 客户和备注各有独立的 localStorage 存储（`customerHistory` / `noteHistory`），各自保留最近 20 条，输入时按当前输入过滤显示快捷标签。
+
+9. **公账/私账筛选 toggle** — 点击已选中框复原为"全部"，而非必须点击第三个按钮。交互简单且不占额外 UI 空间。
+
+10. **导入兼容旧备份** — `importFullJSON` 对旧备份中无 `customer` 字段的记录自动补空字符串（`{ customer: '', ...t }`），确保跨版本备份可还原。
+
 ---
 
 ## 已知限制
 
-- 不支持编辑已记账记录（需删除重记）
 - 统计页仅支持单月视图，导出全部数据功能可导出全量记录
 - Service Worker 缓存策略为基础 precache，未实现运行时缓存
 - 大 chunk 警告（recharts + xlsx 体积约 1MB），使用时可考虑代码分割
