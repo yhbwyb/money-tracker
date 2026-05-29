@@ -118,6 +118,11 @@ export default function RecordItem({
             <span className="text-xs opacity-35">
               {bankName} · {bankCardNumber}
             </span>
+            {transaction.customer && (
+              <span className="text-xs opacity-30 truncate max-w-[80px]">
+                {transaction.customer}
+              </span>
+            )}
             {transaction.note && (
               <span className="text-xs opacity-25 truncate max-w-[120px]" style={{ fontStyle: 'italic' }}>
                 {transaction.note}

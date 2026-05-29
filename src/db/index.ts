@@ -19,6 +19,7 @@ export interface Transaction {
   bankCardId: number
   accountType: 'public' | 'private'
   amount: number
+  customer: string
   note: string
   createdAt: number
 }

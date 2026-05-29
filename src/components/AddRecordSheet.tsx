@@ -4,6 +4,7 @@ import db, { type Transaction } from '../db'
 import { useTransactions } from '../hooks/useTransactions'
 import { getCurrentYearMonth, todayStr } from '../utils/format'
 import { getNoteHistory, saveNoteToHistory } from '../utils/noteHistory'
+import { getCustomerHistory, saveCustomerToHistory } from '../utils/customerHistory'
 
 interface Props {
   onClose: () => void
@@ -22,7 +23,9 @@ export default function AddRecordSheet({ onClose, onSaved, transaction }: Props)
   const [eventTypeId, setEventTypeId] = useState(transaction?.eventTypeId ?? 0)
   const [bankCardId, setBankCardId] = useState(transaction?.bankCardId ?? 0)
   const [amount, setAmount] = useState(transaction ? String(transaction.amount) : '')
+  const [customer, setCustomer] = useState(transaction?.customer ?? '')
   const [note, setNote] = useState(transaction?.note ?? '')
+  const [customerHistory, setCustomerHistory] = useState<string[]>(getCustomerHistory)
   const [noteHistory, setNoteHistory] = useState<string[]>(getNoteHistory)
   const [submitting, setSubmitting] = useState(false)
 
@@ -71,6 +74,12 @@ export default function AddRecordSheet({ onClose, onSaved, transaction }: Props)
 
   const selectedCard = cards.find(c => c.id === bankCardId)
 
+  const filteredCustomers = useMemo(() => {
+    if (!customer.trim()) return customerHistory.slice(0, 6)
+    const q = customer.trim().toLowerCase()
+    return customerHistory.filter(n => n.toLowerCase().includes(q)).slice(0, 6)
+  }, [customer, customerHistory])
+
   const filteredNotes = useMemo(() => {
     if (!note.trim()) return noteHistory.slice(0, 6)
     const q = note.trim().toLowerCase()
@@ -93,7 +102,9 @@ export default function AddRecordSheet({ onClose, onSaved, transaction }: Props)
     }
 
     setSubmitting(true)
+    saveCustomerToHistory(customer)
     saveNoteToHistory(note)
+    setCustomerHistory(getCustomerHistory())
     setNoteHistory(getNoteHistory())
 
     const data = {
@@ -102,7 +113,8 @@ export default function AddRecordSheet({ onClose, onSaved, transaction }: Props)
       bankCardId,
       accountType: selectedCard?.accountType ?? 'private',
       amount: amt,
-      note,
+      customer: customer.trim(),
+      note: note.trim(),
     }
 
     if (editMode) {
@@ -145,7 +157,7 @@ export default function AddRecordSheet({ onClose, onSaved, transaction }: Props)
       >
         {/* Drag handle — swipe down to dismiss */}
         <div
-          className="flex justify-center py-3 -mt-2 mb-2 cursor-grab active:cursor-grabbing touch-none"
+          className="flex justify-center py-2 -mt-2 mb-1 cursor-grab active:cursor-grabbing touch-none"
           onTouchStart={handleDragStart}
           onTouchMove={handleDragMove}
           onTouchEnd={handleDragEnd}
@@ -158,35 +170,35 @@ export default function AddRecordSheet({ onClose, onSaved, transaction }: Props)
 
         {/* Title */}
         <h2
-          className="text-center font-serif font-bold mb-6 tracking-widest"
-          style={{ fontSize: '1.25rem', letterSpacing: '0.25em' }}
+          className="text-center font-serif font-bold mb-3 tracking-widest"
+          style={{ fontSize: '1.1rem', letterSpacing: '0.25em' }}
         >
           {editMode ? '改一笔' : '记一笔'}
         </h2>
 
         {/* Date */}
-        <div className="mb-5">
+        <div className="mb-3">
           <label style={sectionLabelStyle}>日期</label>
           <input
             type="date"
             value={date}
             onChange={e => setDate(e.target.value)}
             className="input-ink w-full"
-            style={{ fontSize: '0.95rem' }}
+            style={{ fontSize: '0.9rem', paddingTop: '0.4rem', paddingBottom: '0.4rem' }}
           />
         </div>
 
         {/* Event Type */}
-        <div className="mb-5">
+        <div className="mb-3">
           <label style={sectionLabelStyle}>事由</label>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             {types.map(t => {
               const selected = eventTypeId === t.id
               return (
                 <button
                   key={t.id}
                   onClick={() => setEventTypeId(t.id!)}
-                  className="px-4 py-2 rounded-full text-sm transition-all duration-150"
+                  className="px-3 py-1.5 rounded-full text-sm transition-all duration-150"
                   style={{
                     backgroundColor: selected ? 'var(--color-ink)' : 'white',
                     color: selected ? 'var(--color-paper)' : 'var(--color-ink-light)',
@@ -203,13 +215,13 @@ export default function AddRecordSheet({ onClose, onSaved, transaction }: Props)
         </div>
 
         {/* Bank Card */}
-        <div className="mb-5">
+        <div className="mb-3">
           <label style={sectionLabelStyle}>银票</label>
           <select
             value={bankCardId}
             onChange={e => setBankCardId(Number(e.target.value))}
             className="input-ink w-full"
-            style={{ fontSize: '0.95rem', appearance: 'none' }}
+            style={{ fontSize: '0.9rem', paddingTop: '0.4rem', paddingBottom: '0.4rem', appearance: 'none' }}
           >
             {cards.length === 0 && <option value={0}>请先在「印鉴」中添加银行卡</option>}
             {cards.map(c => (
@@ -222,7 +234,7 @@ export default function AddRecordSheet({ onClose, onSaved, transaction }: Props)
 
         {/* Account Type seal preview */}
         {selectedCard && (
-          <div className="mb-5 flex items-center gap-2">
+          <div className="mb-3 flex items-center gap-2">
             <span style={{ fontSize: '0.7rem', color: 'var(--color-ink-muted)', letterSpacing: '0.12em' }}>账类</span>
             <span className={selectedCard.accountType === 'public' ? 'seal-public' : 'seal-private'}>
               {selectedCard.accountType === 'public' ? '公账' : '私账'}
@@ -231,12 +243,12 @@ export default function AddRecordSheet({ onClose, onSaved, transaction }: Props)
         )}
 
         {/* Amount */}
-        <div className="mb-5">
+        <div className="mb-3">
           <label style={sectionLabelStyle}>金额</label>
           <div className="relative">
             <span
               className="absolute left-4 top-1/2 -translate-y-1/2 font-serif"
-              style={{ fontSize: '1.5rem', color: 'var(--color-ink)', opacity: 0.25 }}
+              style={{ fontSize: '1.3rem', color: 'var(--color-ink)', opacity: 0.25 }}
             >
               ¥
             </span>
@@ -248,13 +260,44 @@ export default function AddRecordSheet({ onClose, onSaved, transaction }: Props)
               step="0.01"
               inputMode="decimal"
               className="input-ink w-full text-center font-serif font-bold tracking-tight"
-              style={{ fontSize: '2rem', paddingTop: '0.75rem', paddingBottom: '0.75rem' }}
+              style={{ fontSize: '1.6rem', paddingTop: '0.5rem', paddingBottom: '0.5rem' }}
             />
           </div>
         </div>
 
+        {/* Customer */}
+        <div className="mb-3">
+          <label style={sectionLabelStyle}>客户 · 选填</label>
+          <input
+            type="text"
+            value={customer}
+            onChange={e => setCustomer(e.target.value)}
+            placeholder="客户名称…"
+            className="input-ink w-full"
+            style={{ fontSize: '0.9rem', paddingTop: '0.4rem', paddingBottom: '0.4rem' }}
+          />
+          {filteredCustomers.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1.5">
+              {filteredCustomers.map((n, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCustomer(n)}
+                  className="px-2.5 py-1 rounded-full text-xs transition-all duration-150"
+                  style={{
+                    backgroundColor: customer === n ? 'var(--color-ink)' : 'white',
+                    color: customer === n ? 'var(--color-paper)' : 'var(--color-ink-light)',
+                    border: customer === n ? '1px solid var(--color-ink)' : '1px solid rgba(44,36,22,0.1)',
+                  }}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Note */}
-        <div className="mb-5">
+        <div className="mb-3">
           <label style={sectionLabelStyle}>附注 · 选填</label>
           <input
             type="text"
@@ -262,20 +305,19 @@ export default function AddRecordSheet({ onClose, onSaved, transaction }: Props)
             onChange={e => setNote(e.target.value)}
             placeholder="事由备注…"
             className="input-ink w-full"
-            style={{ fontSize: '0.9rem' }}
+            style={{ fontSize: '0.9rem', paddingTop: '0.4rem', paddingBottom: '0.4rem' }}
           />
           {filteredNotes.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-2">
+            <div className="flex flex-wrap gap-1 mt-1.5">
               {filteredNotes.map((n, i) => (
                 <button
                   key={i}
                   onClick={() => setNote(n)}
-                  className="px-3 py-1 rounded-full text-sm transition-all duration-150"
+                  className="px-2.5 py-1 rounded-full text-xs transition-all duration-150"
                   style={{
                     backgroundColor: note === n ? 'var(--color-ink)' : 'white',
                     color: note === n ? 'var(--color-paper)' : 'var(--color-ink-light)',
                     border: note === n ? '1px solid var(--color-ink)' : '1px solid rgba(44,36,22,0.1)',
-                    fontSize: '0.8rem',
                   }}
                 >
                   {n}
@@ -289,14 +331,12 @@ export default function AddRecordSheet({ onClose, onSaved, transaction }: Props)
         <button
           onClick={handleSubmit}
           disabled={submitting}
-          className="btn-ink w-full rounded-xl py-3.5 font-serif font-bold tracking-widest text-base
+          className="btn-ink w-full rounded-xl py-3 font-serif font-bold tracking-widest text-base
                      disabled:opacity-50 disabled:scale-100"
           style={{ letterSpacing: '0.3em' }}
         >
           {submitting ? '…' : editMode ? '改 账' : '入 账'}
         </button>
-
-        <div className="h-4" />
       </div>
     </div>
   )

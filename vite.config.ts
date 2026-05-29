@@ -2,26 +2,13 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
-import { readFileSync } from 'fs'
-import { resolve } from 'path'
 
 const BASE = process.env.BASE_URL ?? '/'
 
-const httpsOptions = (() => {
-  try {
-    return {
-      key: readFileSync(resolve('certs/server-key.pem')),
-      cert: readFileSync(resolve('certs/server.pem')),
-    }
-  } catch {
-    return false
-  }
-})()
-
 export default defineConfig({
   base: BASE,
-  server: { https: httpsOptions, host: true },
-  preview: { https: httpsOptions, host: true },
+  server: { host: true },
+  preview: { host: true },
   plugins: [
     react(),
     tailwindcss(),

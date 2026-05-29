@@ -16,6 +16,7 @@ export default function BillsPage() {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
   const [swipedId, setSwipedId] = useState<number | null>(null)
   const [search, setSearch] = useState('')
+  const [accountFilter, setAccountFilter] = useState<'all' | 'public' | 'private'>('all')
   const { transactions: monthTxns, deleteTransaction } = useTransactions(filterMonth.year, filterMonth.month)
   const allTxns = useLiveQuery(() => db.transactions.orderBy('createdAt').reverse().toArray()) ?? []
   const cards = useLiveQuery(() => db.bankCards.toArray()) ?? []
@@ -36,18 +37,24 @@ export default function BillsPage() {
   const isSearching = search.trim().length > 0
 
   const transactions = useMemo(() => {
-    if (!isSearching) return monthTxns
-    const q = search.trim().toLowerCase()
-    return allTxns.filter(t => {
-      if (t.note.toLowerCase().includes(q)) return true
-      if (String(t.amount).includes(q)) return true
-      const bankName = cardMap.get(t.bankCardId)?.bankName ?? ''
-      if (bankName.toLowerCase().includes(q)) return true
-      const eventName = eventMap.get(t.eventTypeId) ?? ''
-      if (eventName.toLowerCase().includes(q)) return true
-      return false
-    })
-  }, [isSearching, search, monthTxns, allTxns, cardMap, eventMap])
+    let result = isSearching
+      ? allTxns.filter(t => {
+          const q = search.trim().toLowerCase()
+          if (t.note.toLowerCase().includes(q)) return true
+          if (t.customer.toLowerCase().includes(q)) return true
+          if (String(t.amount).includes(q)) return true
+          const bankName = cardMap.get(t.bankCardId)?.bankName ?? ''
+          if (bankName.toLowerCase().includes(q)) return true
+          const eventName = eventMap.get(t.eventTypeId) ?? ''
+          if (eventName.toLowerCase().includes(q)) return true
+          return false
+        })
+      : monthTxns
+    if (accountFilter !== 'all') {
+      result = result.filter(t => t.accountType === accountFilter)
+    }
+    return result
+  }, [isSearching, search, monthTxns, allTxns, cardMap, eventMap, accountFilter])
 
   const { publicTotal, privateTotal } = useMemo(
     () => computeTotals(transactions),
@@ -70,7 +77,7 @@ export default function BillsPage() {
             type="search"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="搜索备注、金额、银行、事由…"
+            placeholder="搜索客户、备注、金额、银行、事由…"
             className="input-ink w-full pr-8"
             style={{ fontSize: '0.85rem', paddingTop: '0.5rem', paddingBottom: '0.5rem' }}
           />
@@ -105,8 +112,14 @@ export default function BillsPage() {
       )}
 
       {/* Summary */}
-      <div className="flex mx-4 mt-3 mb-4">
-        <div className="flex-1 text-center py-3 card-paper mr-2">
+      <div className="flex mx-4 mt-3 mb-4 items-center gap-2">
+        <button
+          onClick={() => setAccountFilter(accountFilter === 'public' ? 'all' : 'public')}
+          className={`flex-1 text-center py-3 card-paper transition-all duration-150 ${
+            accountFilter === 'private' ? 'opacity-40' : ''
+          }`}
+          style={accountFilter === 'public' ? { boxShadow: '0 0 0 2px var(--color-vermillion)' } : undefined}
+        >
           <div
             className="font-serif font-bold tracking-wider"
             style={{ fontSize: '0.65rem', color: 'var(--color-vermillion)', letterSpacing: '0.2em' }}
@@ -116,8 +129,14 @@ export default function BillsPage() {
           <div className="font-serif font-bold mt-1 tracking-tight" style={{ fontSize: '1.1rem', color: 'var(--color-vermillion)' }}>
             ¥{formatAmount(publicTotal)}
           </div>
-        </div>
-        <div className="flex-1 text-center py-3 card-paper ml-2">
+        </button>
+        <button
+          onClick={() => setAccountFilter(accountFilter === 'private' ? 'all' : 'private')}
+          className={`flex-1 text-center py-3 card-paper transition-all duration-150 ${
+            accountFilter === 'public' ? 'opacity-40' : ''
+          }`}
+          style={accountFilter === 'private' ? { boxShadow: '0 0 0 2px var(--color-ink)' } : undefined}
+        >
           <div
             className="font-serif font-bold tracking-wider"
             style={{ fontSize: '0.65rem', color: 'var(--color-ink-light)', letterSpacing: '0.2em' }}
@@ -127,8 +146,9 @@ export default function BillsPage() {
           <div className="font-serif font-bold mt-1 tracking-tight" style={{ fontSize: '1.1rem' }}>
             ¥{formatAmount(privateTotal)}
           </div>
-        </div>
+        </button>
       </div>
+
 
       {/* Records */}
       <div className="pb-24">

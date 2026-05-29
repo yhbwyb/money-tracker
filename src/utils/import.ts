@@ -15,6 +15,8 @@ export async function importFullJSON(file: File): Promise<void> {
 
     await db.bankCards.bulkAdd(data.bankCards)
     await db.eventTypes.bulkAdd(data.eventTypes)
-    await db.transactions.bulkAdd(data.transactions)
+    await db.transactions.bulkAdd(
+      data.transactions.map((t: any) => ({ customer: '', ...t }))
+    )
   })
 }

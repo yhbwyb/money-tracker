@@ -10,6 +10,7 @@ interface ExportRow {
   卡号: string
   公私账: string
   金额: number
+  客户: string
   备注: string
 }
 
@@ -20,6 +21,7 @@ const COLS = [
   { wch: 10 }, // 卡号
   { wch: 8 },  // 公私账
   { wch: 12 }, // 金额
+  { wch: 12 }, // 客户
   { wch: 20 }, // 备注
 ]
 
@@ -36,6 +38,7 @@ function formatRow(
     卡号: card?.cardNumber ?? '',
     公私账: t.accountType === 'public' ? '公账' : '私账',
     金额: t.amount,
+    客户: t.customer,
     备注: t.note,
   }
 }
@@ -99,10 +102,10 @@ export async function exportCSV(year: number, month: number): Promise<void> {
 
   const { eventMap, cardMap } = await lookupMaps()
 
-  const headers = ['日期', '事件', '银行卡', '卡号', '公私账', '金额', '备注']
+  const headers = ['日期', '事件', '银行卡', '卡号', '公私账', '金额', '客户', '备注']
   const rows = transactions.map(t => {
     const r = formatRow(t, eventMap, cardMap)
-    return [r.日期, r.事件, r.银行卡, r.卡号, r.公私账, String(r.金额), r.备注]
+    return [r.日期, r.事件, r.银行卡, r.卡号, r.公私账, String(r.金额), r.客户, r.备注]
       .map(v => `"${v}"`).join(',')
   })
 
